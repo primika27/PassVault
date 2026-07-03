@@ -8,6 +8,7 @@ import {
   FieldSet,
 } from "../components/ui/field";
 import { Input } from "../components/ui/input";
+import { Button } from "#components/ui/button";
 
 export default function Login() {
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function Login() {
       <FieldLabel htmlFor="username">password</FieldLabel>
       <Input id="username" autoComplete="off" aria-invalid placeholder="enter password" />
     </Field>
+    <Button type="submit">Login</Button>
   </FieldGroup>
 </FieldSet>
 );

@@ -1,4 +1,4 @@
-export default function Evaluator() {
-  return <h1>Evaluator</h1>;
+export default function Generator() {
+  return <h1>Generator</h1>;
 }
 

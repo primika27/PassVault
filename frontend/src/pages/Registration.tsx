@@ -3,7 +3,7 @@ import { healthCheck } from "../api/client";
 import {
   Field,
   FieldDescription,
-  FieldError,
+  //FieldError,
   FieldGroup,
   FieldLabel,
   FieldLegend,
@@ -11,6 +11,8 @@ import {
 } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 import { Button } from "#components/ui/button";
+
+
 
 export default function Registration() {
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function Registration() {
     <Field>
       <FieldLabel htmlFor="username">Email</FieldLabel>
       <Input id="username" autoComplete="off" aria-invalid placeholder="you@example.com" />
-      <FieldError>Please enter a valid email address.</FieldError>
+      {/* {Valid && <FieldError>Please enter a valid email address.</FieldError>} */}
     </Field>
     <Field>
       <FieldLabel htmlFor="name">Password</FieldLabel>

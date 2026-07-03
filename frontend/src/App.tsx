@@ -7,19 +7,23 @@ import Evaluator from './pages/Evaluator';
 import Generator from './pages/Generator';
 import Login from './pages/Login';
 import Register from './pages/Registration';
-import Logo from '#components/Logo';
+import AuthLayout from './components/AuthLayout';
+import NavbarLayout from './components/NavBarLayout';
 
 function App() {
   return (
     <Router>
-      <Logo />
       <Routes>
-        <Route path='/' element={<Login/> } />
-        <Route path='/register' element={<Register/>} />
-        <Route path= "/home" element={<Home/>}/>
-        <Route path= "/vault" element={<Vault/>}/>
-        <Route path= "/evaluator" element={<Evaluator/>}/>
-        <Route path= "/generator" element={<Generator/>}/>
+        <Route element={<AuthLayout />}>
+          <Route path='/' element={<Login />} />
+          <Route path='/register' element={<Register />} />
+        </Route>
+        <Route element={<NavbarLayout />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/vault" element={<Vault />} />
+          <Route path="/evaluator" element={<Evaluator />} />
+          <Route path="/generator" element={<Generator />} />
+        </Route>
       </Routes>
     </Router>
   )
