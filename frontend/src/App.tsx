@@ -6,13 +6,17 @@ import Vault from './pages/Vault';
 import { Navbar } from './components/NavBar';
 import Evaluator from './pages/Evaluator';
 import Generator from './pages/Generator';
+import Login from './pages/Login';
+import Register from './pages/Registration';
 
 function App() {
   return (
     <Router>
       <Navbar />
       <Routes>
-        <Route path= "/" element={<Home/>}/>
+        <Route path='/' element={<Login/> } />
+        <Route path='/register' element={<Register/>} />
+        <Route path= "/Home" element={<Home/>}/>
         <Route path= "/vault" element={<Vault/>}/>
         <Route path= "/evaluator" element={<Evaluator/>}/>
         <Route path= "/generator" element={<Generator/>}/>

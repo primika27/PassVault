@@ -3,8 +3,11 @@ from pydantic import BaseModel
 class UserRegister(BaseModel):
     email: str
     name: str   
-    password: str
+    authHash: str
+    kdfSalt: str
+    verification_status: str = 'unverified'
+
 
 class UserLogin(BaseModel):
     email: str
-    password: str
+    authHash: str
