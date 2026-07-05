@@ -7,25 +7,50 @@ from argon2 import PasswordHasher
 hasher= PasswordHasher()
 
 #creating account
-def register(userId : str, name : str, email : str, password : str):
-    hash=hasher.hash(password)
-    new_user = user(userId, name, email, hash)
-    verify_email(email)
+def register(userId : str, name : str, email : str, authHash: str, kdfSalt: str):
+    hash=hasher.hash(authHash)
+    new_user = user(userId, name, email, hash, kdfSalt)
+
+    try:
+       verify_email(email) 
+    except Exception as e:
+        print(f"Failed to send verification email: {e}")
     db.database.add_user(new_user)
     return new_user
 
 def verify_email(email : str):
+    subject = "Verify your email"
+    content = f"Please verify your email by clicking the following link: http://localhost:5173/verify?email={email}"
+    send_email(content, subject, email)
+
+def send_email(content: str, subject: str, to_email: str):
+    smtp = smtplib.SMTP('localhost')
     sender_email = "PassVault@passvault.com"
-    receiver_email = email
     message = EmailMessage()
-    message["Subject"] = "Email Verification for your new Account"
+    message["Subject"] = subject
     message["From"] = sender_email
-    message["To"] = receiver_email
-    message.set_content("Please verify your email address by clicking the following link: <verification_link>")
+    message["To"] = to_email
+    message.set_content(content)
+    smtp.send_message(message)
+
+def mfauthenticate(userId : str, authHash: str):
+    user = db.database.get_user_by_id(userId)
+    if user is None:
+        raise ValueError("User not found")
+    try:
+        hasher.verify(user.authHash, authHash)
+    except Exception as e:
+        raise ValueError("Invalid credentials") from e
+    
+    mf_code = 1234
+    subject = "MFA Authentication"
+    content = f"Here is your MFA code: {mf_code}Please use this code to complete your authentication."
+    send_email(content, subject, email)
+    return user
 
 #email verification upon acc creation
 def get_status(userId : str):
-    return None
+    return db.database.get_user_verification_status(userId)
 
 
 

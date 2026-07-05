@@ -16,13 +16,24 @@ export async function getSalt(email: string) {
   return res.json();
 }
 
-export async function registerUser(userData: { userId: string; name: string; email: string; authHash: string; kdfSalt: string; verification_status: string }) {
+export async function registerUser(userData: { userId: string; name: string; email: string; authHash: string; kdfSalt: Uint8Array; verification_status: string }) {
   const res = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(userData),
+  });
+  return res.json();
+}
+
+export async function verifyUser(verificationData: { email: string; verificationCode: string }) {
+  const res = await fetch(`${API_BASE_URL}/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(verificationData),
   });
   return res.json();
 }

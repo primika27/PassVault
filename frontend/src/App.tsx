@@ -11,6 +11,8 @@ import AuthLayout from './components/AuthLayout';
 import NavbarLayout from './components/NavBarLayout';
 import About from './pages/About';
 import Profile from './pages/Profile';
+import Mfa from './pages/Mfa';
+import Verification from './pages/Verification';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         <Route element={<AuthLayout />}>
           <Route path='/' element={<Login />} />
           <Route path='/register' element={<Register />} />
+          <Route path='/verification' element={<Verification />} />
+          <Route path='/mfa' element={<Mfa />} />
         </Route>
         <Route element={<NavbarLayout />}>
           <Route path="/home" element={<Home />} />
