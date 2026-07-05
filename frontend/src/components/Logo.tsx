@@ -13,8 +13,8 @@ export default function Logo({ size = 'default' }: LogoProps) {
   };
 
   const imgStyle = {
-    width: size === 'small' ? '40px' : 'auto',
-    height: size === 'small' ? '40px' : 'auto',
+    width: size === 'small' ? '50px' : 'auto',
+    height: size === 'small' ? '50px' : 'auto',
   };
 
   return (

@@ -9,6 +9,8 @@ import Login from './pages/Login';
 import Register from './pages/Registration';
 import AuthLayout from './components/AuthLayout';
 import NavbarLayout from './components/NavBarLayout';
+import About from './pages/About';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
           <Route path="/vault" element={<Vault />} />
           <Route path="/evaluator" element={<Evaluator />} />
           <Route path="/generator" element={<Generator />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
     </Router>
