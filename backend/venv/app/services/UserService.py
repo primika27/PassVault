@@ -18,6 +18,16 @@ def register(userId : str, name : str, email : str, authHash: str, kdfSalt: str)
     db.database.add_user(new_user)
     return new_user
 
+def login(email : str, authHash: str):
+    user = db.database.get_user_by_email(email)
+    if user is None:
+        raise ValueError("User not found")
+    try:
+        hasher.verify(user.authHash, authHash)
+    except Exception as e:
+        raise ValueError("Invalid credentials") from e
+    return user
+
 def verify_email(email : str):
     subject = "Verify your email"
     content = f"Please verify your email by clicking the following link: http://localhost:5173/verify?email={email}"
@@ -51,6 +61,12 @@ def mfauthenticate(userId : str, authHash: str):
 #email verification upon acc creation
 def get_status(userId : str):
     return db.database.get_user_verification_status(userId)
+
+def get_salt(userId : str):
+    user = db.database.get_user_by_id(userId)
+    if user is None:
+        raise ValueError("User not found")
+    return user.kdfSalt
 
 
 

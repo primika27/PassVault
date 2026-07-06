@@ -1,4 +1,5 @@
 // src/api/client.ts
+import * as argon2 from "argon2-browser";
 export const API_BASE_URL = "http://127.0.0.1:8000";
 
 export async function healthCheck() {
@@ -16,7 +17,7 @@ export async function getSalt(email: string) {
   return res.json();
 }
 
-export async function registerUser(userData: { userId: string; name: string; email: string; authHash: string; kdfSalt: Uint8Array; verification_status: string }) {
+export async function registerUser(userData: { userId: string; name: string; email: string; authHash: argon2.Argon2BrowserHashResult; kdfSalt: string }) {
   const res = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
     headers: {

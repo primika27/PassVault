@@ -11,6 +11,7 @@ import {
 import { Input } from "../components/ui/input";
 import { Button } from "#components/ui/button";
 import { useNavigate } from "react-router-dom";
+import * as argon2 from "argon2-browser";
 export default function Registration() {
   const [form, setForm] = useState({
     name: "",
@@ -34,17 +35,25 @@ export default function Registration() {
     event.preventDefault();
 
     try {
+
+      const authHash = await argon2.hash({
+        pass: form.password,
+        salt: crypto.getRandomValues(new Uint8Array(16)),
+        type: argon2.ArgonType.Argon2id,
+      });
+      
+      const kdfSalt = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(64))));
+
       const payload = {
         userId: crypto.randomUUID(),
         name: form.name,
         email: form.email,
-        authHash: form.password,
-        kdfSalt: crypto.getRandomValues(new Uint8Array(64)),
-        verification_status: "unverified",
+        authHash,
+        kdfSalt,
       };
 
       const response = await registerUser(payload);
-      console.log("User registered successfully:", response);
+      console.log("User registered successfully:c", response);
       setMessage("Account created successfully, please check your email for verification."); 
       navigate('/verification');
 
