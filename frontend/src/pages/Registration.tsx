@@ -1,5 +1,5 @@
 import { useEffect, useState, type SubmitEvent } from "react";
-import { healthCheck, registerUser } from "../api/client";
+import { createRegistrationPayload, healthCheck, registerUser } from "../api/client";
 import {
   Field,
   FieldDescription,
@@ -10,8 +10,7 @@ import {
 } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 import { Button } from "#components/ui/button";
-import { useNavigate } from "react-router-dom";
-import * as argon2 from "argon2-browser";
+import { Link, useNavigate } from "react-router-dom";
 export default function Registration() {
   const [form, setForm] = useState({
     name: "",
@@ -35,22 +34,7 @@ export default function Registration() {
     event.preventDefault();
 
     try {
-
-      const authHash = await argon2.hash({
-        pass: form.password,
-        salt: crypto.getRandomValues(new Uint8Array(16)),
-        type: argon2.ArgonType.Argon2id,
-      });
-      
-      const kdfSalt = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(64))));
-
-      const payload = {
-        userId: crypto.randomUUID(),
-        name: form.name,
-        email: form.email,
-        authHash,
-        kdfSalt,
-      };
+      const payload = await createRegistrationPayload(form);
 
       const response = await registerUser(payload);
       console.log("User registered successfully:c", response);
@@ -111,6 +95,9 @@ export default function Registration() {
           {message ? <p className="text-sm text-muted-foreground shimmer-color-orange-600">{message}</p> : null}
         </FieldGroup>
       </form>
+      <Link className="text-sm text-muted-foreground hover:underline" to="/login">
+        Already have an account? Login
+      </Link>
     </FieldSet>
   );
 }

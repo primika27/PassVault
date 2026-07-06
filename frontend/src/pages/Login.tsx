@@ -9,6 +9,7 @@ import {
 } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 import { Button } from "#components/ui/button";
+import { Link } from "react-router-dom";
 
 export default function Login() {
   useEffect(() => {
@@ -29,6 +30,9 @@ export default function Login() {
       <Input id="username" autoComplete="off" aria-invalid placeholder="enter password" />
     </Field>
     <Button type="submit">Login</Button>
+    <Link className="text-sm text-muted-foreground hover:underline" to="/register">
+      Don't have an account? Register
+    </Link>
   </FieldGroup>
 </FieldSet>
 );
