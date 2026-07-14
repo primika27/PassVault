@@ -95,7 +95,7 @@ export default function Registration() {
           {message ? <p className="text-sm text-muted-foreground shimmer-color-orange-600">{message}</p> : null}
         </FieldGroup>
       </form>
-      <Link className="text-sm text-muted-foreground hover:underline" to="/login">
+      <Link className="text-sm text-muted-foreground hover:underline" to="/">
         Already have an account? Login
       </Link>
     </FieldSet>

@@ -1,4 +1,4 @@
-to run backend: uvicorn app.main:app --reload
+to run backend: uvicorn src.app.main:app --reload
 to activate the venv cd to backend and type : .\venv\Scripts\Activate.ps1
 
 

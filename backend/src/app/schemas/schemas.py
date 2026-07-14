@@ -9,7 +9,7 @@ class UserRegister(BaseModel):
     email: str
     name: str
     authHash: argon2.Argon2BrowserHashResult
-    kdfSalt: array[bytes]
+    kdfSalt: str
 
 
 class UserLogin(BaseModel):
