@@ -14,8 +14,7 @@ def register(payload: UserRegister):
             userId=payload.userId or "",
             name=payload.name,
             email=payload.email,
-            authHash=payload.authHash,
-            kdfSalt=payload.kdfSalt,
+            password=payload.password,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

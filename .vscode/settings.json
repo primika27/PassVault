@@ -1,5 +1,6 @@
 {
     "conventionalCommits.scopes": [
-        "Navbar"
+        "Navbar",
+        "configuration fix to run backend"
     ]
 }

@@ -1,16 +1,21 @@
+from hashlib import new
+from sqlite3 import Date
+
+from sqlalchemy import false
+
 import app.db.db as db
 from app.domain.user.User import user
 import smtplib
 from email.message import EmailMessage
 from argon2 import PasswordHasher
-
+from argon2.exceptions import VerifyMismatchError
+import secrets
 hasher= PasswordHasher()
 
 #creating account
-def register(userId : str, name : str, email : str, authHash: str, kdfSalt: str):
-    hash=hasher.hash(authHash)
-    new_user = user(userId, name, email, hash, kdfSalt)
-
+def register(userId : str, name : str, email : str, password : str):
+    password_hash = hasher.hash(password)
+    new_user = user(userId, name, email, password_hash, false)
     try:
        verify_email(email) 
     except Exception as e:
@@ -18,14 +23,19 @@ def register(userId : str, name : str, email : str, authHash: str, kdfSalt: str)
     db.database.add_user(new_user)
     return new_user
 
-def login(email : str, authHash: str):
+def verify_password(stored_hash: str, password: str) -> bool:
+    try:
+        hasher.verify(stored_hash, password)
+        return True
+    except VerifyMismatchError:
+        return False
+
+def login(email : str, hash: str):
     user = db.database.get_user_by_email(email)
     if user is None:
-        raise ValueError("User not found")
-    try:
-        hasher.verify(user.authHash, authHash)
-    except Exception as e:
-        raise ValueError("Invalid credentials") from e
+        raise ValueError("Invalid credentials")
+    if not verify_password(user.hash, hash):
+        raise ValueError("Invalid credentials")
     return user
 
 def verify_email(email : str):
@@ -52,10 +62,14 @@ def mfauthenticate(userId : str, authHash: str):
     except Exception as e:
         raise ValueError("Invalid credentials") from e
     
-    mf_code = 1234
+
+    mf_code = secrets.token_urlsafe(6)
+    now = Date.now()
+    expiration_time = (now + 5 * 60 * 1000)  # 5 minutes from now
+    db.database.add_secret(userId, mf_code, "mfa_code", expiration_time, 1)
     subject = "MFA Authentication"
     content = f"Here is your MFA code: {mf_code}Please use this code to complete your authentication."
-    send_email(content, subject, email)
+    send_email(content, subject, user.email)
     return user
 
 #email verification upon acc creation
