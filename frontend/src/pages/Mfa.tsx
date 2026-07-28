@@ -4,7 +4,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "../components/ui/input-otp"
-import { verifyUser } from "../api/client";
+import { authenticateUser } from "../api/client";
 
 export default function Mfa() {
 
@@ -13,13 +13,8 @@ export default function Mfa() {
    const handleAutoSubmit = async (code: string) => {
     try {
       console.log("Verifying code:", code);
-
-      const result = await verifyUser({
-      email,
-      verificationCode: code,
-    });
-
-      console.log("Verification result:", result);
+      const response = await authenticateUser({ verificationCode: code });
+      console.log("Verification response:", response);
 
     } catch (error) {
       console.error("Verification failed", error);

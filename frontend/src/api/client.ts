@@ -54,19 +54,28 @@ export async function createLoginPayload(form: { email: string; password: string
   };
 }
 
-
-export async function verifyUser(verificationData: { email: string; verificationCode: string }) {
+export async function verifyEmail(token: string) {
   const res = await fetch(`${API_BASE_URL}/verify`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(verificationData),
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  return res.json();
+}
+
+export async function authenticateUser(authData: { verificationCode: string }) {
+  const res = await fetch(`${API_BASE_URL}/mfa`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ verificationCode: authData.verificationCode }),
   });
   return res.json();
 }
 
 export async function loginUser(loginData: { email: string; password: string }) {
+  
   const res = await fetch(`${API_BASE_URL}/login`, {
     method: "POST",
     credentials: "include", // Include cookies in the request

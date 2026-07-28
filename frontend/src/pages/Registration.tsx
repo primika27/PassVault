@@ -40,7 +40,6 @@ export default function Registration() {
       console.log("User registered successfully:c", response);
       setMessage("Account created successfully, please check your email for verification."); 
       navigate('/verification');
-
     } catch (error) {
       console.error("Registration failed:", error);
       setMessage("Registration failed. Please try again.");

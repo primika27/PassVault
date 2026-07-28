@@ -37,6 +37,7 @@ export default function Login() {
             password: loginData.password,
           });
           console.log("User logged in successfully:", response);
+        
         } catch (error) {
           console.error("Login failed:", error);
         }
