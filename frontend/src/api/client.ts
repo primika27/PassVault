@@ -16,6 +16,16 @@ export async function getSalt(email: string) {
   return res.json();
 }
 
+export async function getVerificationCode(email: string) {
+  const res = await fetch(`${API_BASE_URL}/verification-code?email=${email}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return res.json();
+}
+
 export async function registerUser(userData: { userId: string; name: string; email: string;}) {
   const res = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
@@ -33,8 +43,17 @@ export async function createRegistrationPayload(form: { name: string; email: str
     userId: crypto.randomUUID(),
     name: form.name,
     email: form.email,
+    password: form.password,
   };
 }
+
+export async function createLoginPayload(form: { email: string; password: string }) {
+  return {
+    email: form.email,
+    password: form.password,
+  };
+}
+
 
 export async function verifyUser(verificationData: { email: string; verificationCode: string }) {
   const res = await fetch(`${API_BASE_URL}/verify`, {
@@ -47,9 +66,10 @@ export async function verifyUser(verificationData: { email: string; verification
   return res.json();
 }
 
-export async function loginUser(loginData: { email: string; authHash: string }) {
+export async function loginUser(loginData: { email: string; password: string }) {
   const res = await fetch(`${API_BASE_URL}/login`, {
     method: "POST",
+    credentials: "include", // Include cookies in the request
     headers: {
       "Content-Type": "application/json",
     },

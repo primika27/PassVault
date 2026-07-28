@@ -1,23 +1,28 @@
+import datetime
 from hashlib import new
-from sqlite3 import Date
-
-from sqlalchemy import false
-
 import app.db.db as db
 from app.domain.user.User import user
 import smtplib
 from email.message import EmailMessage
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-import secrets
+import secrets as pysecrets
+from datetime import datetime, timedelta, timezone
+
+from backend.src.app.db.models import purpose
+
 hasher= PasswordHasher()
+
+MFA_CODE_TTL = timedelta(minutes=5)
+MFA_MAX_ATTEMPTS = 5
+SESSION_TTL = timedelta(days=7)
 
 #creating account
 def register(userId : str, name : str, email : str, password : str):
     password_hash = hasher.hash(password)
-    new_user = user(userId, name, email, password_hash, false)
+    new_user = user(userId, name, email, password_hash, False)
     try:
-       verify_email(email) 
+       verify_email(email)
     except Exception as e:
         print(f"Failed to send verification email: {e}")
     db.database.add_user(new_user)
@@ -30,18 +35,59 @@ def verify_password(stored_hash: str, password: str) -> bool:
     except VerifyMismatchError:
         return False
 
-def login(email : str, hash: str):
+def login(email : str, password: str):
     user = db.database.get_user_by_email(email)
-    if user is None:
+
+    if user is None or not verify_password(user.authHash, password):
         raise ValueError("Invalid credentials")
-    if not verify_password(user.hash, hash):
-        raise ValueError("Invalid credentials")
-    return user
+
+    code = f"{pysecrets.randbelow(1_000_000):06d}"  # random 6-digit code, zero-padded
+    code_hash = hasher.hash(code)
+    challenge_id = pysecrets.token_urlsafe(32)
+
+    db.database.add_secret(
+        user_id=user.id,
+        challenge_id=challenge_id,
+        secretHash=code_hash,
+        purpose=purpose.MFA_CODE,
+        expiration=datetime.now(timezone.utc) + MFA_CODE_TTL,
+        attempts=0,
+    )
+
+    send_email(
+        content=f"Your PassVault verification code is: {code}",
+        subject="Your login code",
+        to_email=user.email,
+    )
+    
+    return challenge_id
 
 def verify_email(email : str):
+    token = pysecrets.token_urlsafe(32)
+    db.database.add_secret(
+        user_id=db.database.get_user_by_email(email).id,
+        challenge_id=token,
+        secretHash=token,
+        purpose=purpose.EMAIL_VERIFY,
+        expiration=datetime.now(timezone.utc) + timedelta(hours=24),  # 24 hours from now
+        attempts=0,
+    )
     subject = "Verify your email"
-    content = f"Please verify your email by clicking the following link: http://localhost:5173/verify?email={email}"
+    content = f"Verify your email: http://localhost:5173/verify?token={token}"
     send_email(content, subject, email)
+
+
+def verify(token: str):
+    record = db.database.get_secret_by_challenge(token)
+    if record is None or record.purpose != purpose.EMAIL_VERIFY:
+        raise ValueError("Invalid or expired verification link")
+    if datetime.now(timezone.utc) > record.expiration:
+        db.database.delete_secret(record.id)
+        raise ValueError("Invalid or expired verification link")
+
+    db.database.set_verification_status(record.user_id, "verified")
+    db.database.delete_secret(record.id)
+    return record.user_id
 
 def send_email(content: str, subject: str, to_email: str):
     smtp = smtplib.SMTP('localhost')
@@ -63,9 +109,9 @@ def mfauthenticate(userId : str, authHash: str):
         raise ValueError("Invalid credentials") from e
     
 
-    mf_code = secrets.token_urlsafe(6)
-    now = Date.now()
-    expiration_time = (now + 5 * 60 * 1000)  # 5 minutes from now
+    mf_code = pysecrets.token_urlsafe(6)
+    now = datetime.now(timezone.utc)
+    expiration_time = (now + timedelta(minutes=5))  # 5 minutes from now
     db.database.add_secret(userId, mf_code, "mfa_code", expiration_time, 1)
     subject = "MFA Authentication"
     content = f"Here is your MFA code: {mf_code}Please use this code to complete your authentication."

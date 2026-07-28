@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { healthCheck } from "../api/client";
+import { useEffect, useState } from "react";
+import { createLoginPayload, healthCheck, loginUser } from "../api/client";
 import {
   Field,
   FieldGroup,
@@ -16,6 +16,32 @@ export default function Login() {
     healthCheck().then(console.log);
   }, []);
 
+  const [form, setForm] = useState({
+    name: "",
+    password: "",
+  });
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+  const handleLogin = async () => {
+
+    const loginData = await createLoginPayload({
+      email: form.name,
+      password: form.password,
+    });
+        try {
+          const response = await loginUser({
+            email: loginData.email,
+            password: loginData.password,
+          });
+          console.log("User logged in successfully:", response);
+        } catch (error) {
+          console.error("Login failed:", error);
+        }
+  };
+  
   return (
   
  <FieldSet>
@@ -23,13 +49,15 @@ export default function Login() {
   <FieldGroup>
     <Field>
       <FieldLabel htmlFor="name">username</FieldLabel>
-      <Input id="name" autoComplete="off" placeholder="enter username or email" />
+      <Input id="name" name="username" autoComplete="off" placeholder="enter username or email" value={form.name}
+              onChange={handleChange} />
     </Field>
     <Field>
-      <FieldLabel htmlFor="username">password</FieldLabel>
-      <Input id="username" autoComplete="off" aria-invalid placeholder="enter password" />
+      <FieldLabel htmlFor="password">password</FieldLabel>
+      <Input id="password" name="password" autoComplete="off" aria-invalid placeholder="enter password" value={form.password}
+              onChange={handleChange} />
     </Field>
-    <Button type="submit">Login</Button>
+    <Button onClick={handleLogin}>Login</Button>
     <Link className="text-sm text-muted-foreground hover:underline" to="/register">
       Don't have an account? Register
     </Link>

@@ -24,6 +24,7 @@ class UserLogin(BaseModel):
 
 class UserAuthenticate(BaseModel):
     otp: str
+
 class UserVerify(BaseModel):
-    email: EmailStr
+    token: str
 
