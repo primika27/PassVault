@@ -33,7 +33,7 @@ def login(payload: UserLogin, response: Response):
         key=MFA_COOKIE, value=challenge_id,
         httponly=True, secure=True, samesite="strict", max_age=300,  # 5 min
     )
-    return {"mfa_required": True}
+    return {"mfaRequired": True, "next": "/mfa"}
 
 @router.post("/mfa")
 def mfauthenticate(payload: UserAuthenticate, response: Response, mfa_challenge: str | None = None):

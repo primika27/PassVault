@@ -2,7 +2,8 @@
     "conventionalCommits.scopes": [
         "Navbar",
         "configuration fix to run backend",
-        "session mfa management"
+        "session mfa management",
+        "email verification"
     ],
     "cSpell.words": [
         "pysecrets"

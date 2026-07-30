@@ -9,9 +9,11 @@ import {
 } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 import { Button } from "#components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   useEffect(() => {
     healthCheck().then(console.log);
   }, []);
@@ -26,7 +28,6 @@ export default function Login() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
   const handleLogin = async () => {
-
     const loginData = await createLoginPayload({
       email: form.name,
       password: form.password,
@@ -36,7 +37,12 @@ export default function Login() {
             email: loginData.email,
             password: loginData.password,
           });
+          if (response.mfaRequired) {
+            navigate(response.next ?? "/mfa");
+            return;
+          }
           console.log("User logged in successfully:", response);
+
         
         } catch (error) {
           console.error("Login failed:", error);
@@ -49,13 +55,13 @@ export default function Login() {
   <FieldLegend>Login</FieldLegend>
   <FieldGroup>
     <Field>
-      <FieldLabel htmlFor="name">username</FieldLabel>
-      <Input id="name" name="username" autoComplete="off" placeholder="enter username or email" value={form.name}
+      <FieldLabel htmlFor="name">email</FieldLabel>
+      <Input id="name" name="name" autoComplete="off" placeholder="enter email" value={form.name}
               onChange={handleChange} />
     </Field>
     <Field>
       <FieldLabel htmlFor="password">password</FieldLabel>
-      <Input id="password" name="password" autoComplete="off" aria-invalid placeholder="enter password" value={form.password}
+      <Input id="password" name="password" autoComplete="off" placeholder="enter password" value={form.password}
               onChange={handleChange} />
     </Field>
     <Button onClick={handleLogin}>Login</Button>

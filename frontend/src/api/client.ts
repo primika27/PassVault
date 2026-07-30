@@ -102,7 +102,7 @@ export async function authenticateUser(authData: { verificationCode: string }) {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ verificationCode: authData.verificationCode }),
+    body: JSON.stringify({ otp: authData.verificationCode }),
   });
   return res.json();
 }
@@ -117,5 +117,11 @@ export async function loginUser(loginData: { email: string; password: string }) 
     },
     body: JSON.stringify(loginData),
   });
-  return res.json();
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(typeof data?.detail === "string" ? data.detail : "Login failed");
+  }
+
+  return data as { mfaRequired: boolean; next?: string };
 }

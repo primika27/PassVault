@@ -53,6 +53,7 @@ def login(email : str, password: str):
     code_hash = hasher.hash(code)
     challenge_id = pysecrets.token_urlsafe(32)
 
+
     db.database.add_secret(
         user_id=user.user_id,
         challenge_id=challenge_id,

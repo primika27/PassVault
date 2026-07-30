@@ -18,7 +18,7 @@ users = Table('users', metadata_obj,
 
 class purpose(enum.Enum): 
     TOKEN = "token" 
-    SECRET = "mfa_code"
+    MFA_CODE = "mfa_code"
     EMAIL_VERIFY = "email_verify"
 
 secrets = Table('secrets', metadata_obj,
