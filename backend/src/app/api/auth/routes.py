@@ -1,7 +1,7 @@
 from app.services import UserService
 from fastapi import APIRouter, HTTPException, Response, status
 
-from app.schemas.schemas import UserLogin, UserRegister, UserVerify
+from app.schemas.schemas import UserLogin, UserRegister, UserVerify, UserAuthenticate
 from app.services.UserService import register, login, verify_email, mfauthenticate
 
 router = APIRouter()
@@ -36,13 +36,29 @@ def login(payload: UserLogin, response: Response):
     return {"mfa_required": True}
 
 @router.post("/mfa")
-def mfauthenticate(payload: UserAuth):
+def mfauthenticate(payload: UserAuthenticate, response: Response, mfa_challenge: str | None = None):
+    if not mfa_challenge:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="MFA challenge cookie missing or expired. Please log in again."
+        )
     try:
-        return UserService.mfauthenticate(email=payload.email, verificationCode=payload.verificationCode)
+        # Pass the challenge_id from cookie AND the otp from body
+        session_id = UserService.mfa(
+            challenge_id=mfa_challenge, 
+            otp=payload.otp
+        )
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
-    
+    # Set the permanent session cookie and clear the temp mfa_challenge cookie
+    response.set_cookie(
+        key="session_id", value=session_id, httponly=True, secure=True, samesite="strict", max_age=604800
+    )
+    response.delete_cookie("mfa_challenge")
+
+    return {"message": "Authenticated successfully"}
+
 @router.post("/verify")
 def verify(payload: UserVerify):
     try:

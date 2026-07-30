@@ -47,6 +47,15 @@ class Database:
                 attempts=attempts,
             ))
 
+    def add_session(self, session_id, user_id, created_at, expires_at):
+        with self.engine.begin() as conn:
+            conn.execute(sessions.insert().values(
+                session_id=session_id,
+                user_id=user_id,
+                created_at=created_at,
+                expires_at=expires_at,
+            ))
+
     def get_secret_by_challenge(self, challenge_id):
         with self.engine.connect() as conn:
             return conn.execute(
@@ -58,4 +67,12 @@ class Database:
             conn.execute(secrets.delete().where(secrets.c.id == secret_id))
 
 
+    def increment_secret_attempts(self, secret_id):
+        with self.engine.begin() as conn:
+            conn.execute(
+                secrets.update().where(secrets.c.id == secret_id).values(
+                    attempts=secrets.c.attempts + 1
+                )
+            )
+  
 database = Database(engine)

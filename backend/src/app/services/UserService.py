@@ -1,7 +1,6 @@
 import datetime
 from hashlib import new
 import app.db.db as db
-from app.domain.user.User import user
 import smtplib
 from email.message import EmailMessage
 from argon2 import PasswordHasher
@@ -99,24 +98,35 @@ def send_email(content: str, subject: str, to_email: str):
     message.set_content(content)
     smtp.send_message(message)
 
-def mfauthenticate(userId : str, authHash: str):
-    user = db.database.get_user_by_id(userId)
-    if user is None:
-        raise ValueError("User not found")
-    try:
-        hasher.verify(user.authHash, authHash)
-    except Exception as e:
-        raise ValueError("Invalid credentials") from e
-    
+def mfa(challenge_id: str, otp: str) -> str:
+    secret_record = db.database.get_secret_by_challenge(challenge_id)
+    if not secret_record or secret_record.purpose != purpose.MFA_CODE:
+        raise ValueError("Invalid or expired MFA session.")
 
-    mf_code = pysecrets.token_urlsafe(6)
-    now = datetime.now(timezone.utc)
-    expiration_time = (now + timedelta(minutes=5))  # 5 minutes from now
-    db.database.add_secret(userId, mf_code, "mfa_code", expiration_time, 1)
-    subject = "MFA Authentication"
-    content = f"Here is your MFA code: {mf_code}Please use this code to complete your authentication."
-    send_email(content, subject, user.email)
-    return user
+    if datetime.now(timezone.utc) > secret_record.expiration:
+        db.database.delete_secret(secret_record.id)
+        raise ValueError("MFA code has expired. Please log in again.")
+
+    if secret_record.attempts >= MFA_MAX_ATTEMPTS:
+        db.database.delete_secret(secret_record.id)
+        raise ValueError("Too many failed attempts. Please log in again.")
+
+    if not verify_password(stored_hash=secret_record.secretHash, password=otp):
+        db.database.increment_secret_attempts(secret_record.id)
+        raise ValueError("Invalid verification code.")
+
+    user_id = secret_record.user_id
+    db.database.delete_secret(secret_record.id)
+
+    session_id = pysecrets.token_urlsafe(32)
+    db.database.add_session(
+        session_id=session_id,
+        user_id=user_id,
+        created_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + SESSION_TTL
+    )
+
+    return session_id
 
 #email verification upon acc creation
 def get_status(userId : str):
