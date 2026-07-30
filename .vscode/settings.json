@@ -1,6 +1,7 @@
 {
     "conventionalCommits.scopes": [
         "Navbar",
-        "configuration fix to run backend"
+        "configuration fix to run backend",
+        "session mfa management"
     ]
 }

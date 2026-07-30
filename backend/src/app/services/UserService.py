@@ -8,7 +8,7 @@ from argon2.exceptions import VerifyMismatchError
 import secrets as pysecrets
 from datetime import datetime, timedelta, timezone
 
-from backend.src.app.db.models import purpose
+from app.db.models import purpose
 
 hasher= PasswordHasher()
 
@@ -17,14 +17,13 @@ MFA_MAX_ATTEMPTS = 5
 SESSION_TTL = timedelta(days=7)
 
 #creating account
-def register(userId : str, name : str, email : str, password : str):
+def register(user_id: str, name : str, email : str, password : str):
     password_hash = hasher.hash(password)
-    new_user = user(userId, name, email, password_hash, False)
+    new_user = db.database.add_user(user_id, name, email, password_hash, False)
     try:
        verify_email(email)
     except Exception as e:
         print(f"Failed to send verification email: {e}")
-    db.database.add_user(new_user)
     return new_user
 
 def verify_password(stored_hash: str, password: str) -> bool:

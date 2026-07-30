@@ -5,11 +5,10 @@ from pydantic import BaseModel, EmailStr, field_validator
 
 
 class UserRegister(BaseModel):
-    userId: str | None = None
+    user_id: str | None = None
     email: EmailStr
     name: str
     password: str
-    verification : bool | None = None
 
     @field_validator("password")
     @classmethod

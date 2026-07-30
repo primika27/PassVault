@@ -1,25 +1,21 @@
+from contextlib import asynccontextmanager
 
-from fastapi.concurrency import asynccontextmanager
-#from app.api import health
-#from app.api.auth.routes import router as auth_router
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-#from backend.src.app.api.auth.routes import router as auth_router
-
-app = FastAPI(title="PassVault backend")
-#metadata.create_all(engine)
-#app.include_router(health.router)
-#app.include_router(auth_router)
-
-#root to test if the backend is running
-@app.get("/")
-def read_root() :
-    return {"PassVault backend is running"}
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.auth.routes import router as auth_router   
+from app.db.db import create_db_and_tables, engine
+import app.db.models
 
 @asynccontextmanager
-async def startup():
-    await database.connect()
+async def lifespan(app: FastAPI):
+   
+   create_db_and_tables()
+   yield
 
+
+app = FastAPI(title="PassVault backend", lifespan=lifespan)
+
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -27,5 +23,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(auth_router)
 
-#app.include_router(auth_router)
+@app.get("/")
+def read_root():
+    return {"message": "PassVault backend is running"}

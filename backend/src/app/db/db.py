@@ -1,20 +1,38 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine, MetaData
-from .models import users, secrets, sessions
-DATABASE_URL = "sqlite:///./users.db"
+from .models import metadata_obj, users, secrets, sessions
+
+DB_FILE = Path(__file__).resolve().parents[2] / "users.db"
+DATABASE_URL = f"sqlite:///{DB_FILE.as_posix()}"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-metadata = MetaData()
+
+def create_db_and_tables():
+    with engine.connect() as conn:
+        legacy_user_id = conn.exec_driver_sql(
+            """
+            SELECT 1
+            FROM pragma_table_info('users')
+            WHERE name = 'user_id' AND upper(type) = 'INTEGER'
+            """
+        ).first()
+        if legacy_user_id:
+            metadata_obj.drop_all(bind=engine)
+    metadata_obj.create_all(bind=engine)
+
 class Database:
     def __init__(self, engine):
         self.engine = engine
 
-    def add_user(self, user):
+    def add_user(self, user, name, email, password, verification_status):
         with self.engine.begin() as conn:
             result = conn.execute(users.insert().values(
-                username=user.name,
-                email=user.email,
-                authHash=user.password,
-                verification_status="verified" if user.is_verified else "unverified",
+                user_id=user,
+                username=name,
+                email=email,
+                authHash=password,
+                verification_status=verification_status,
             ))
             return result.inserted_primary_key[0]  # returns the new user_id
 

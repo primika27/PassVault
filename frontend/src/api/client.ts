@@ -1,3 +1,4 @@
+
 // src/api/client.ts
 export const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -26,7 +27,12 @@ export async function getVerificationCode(email: string) {
   return res.json();
 }
 
-export async function registerUser(userData: { userId: string; name: string; email: string;}) {
+export async function registerUser(userData: { 
+  user_id: string; 
+  name: string; 
+  email: string; 
+  password: string; 
+}) {
   const res = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
     headers: {
@@ -34,13 +40,40 @@ export async function registerUser(userData: { userId: string; name: string; ema
     },
     body: JSON.stringify(userData),
   });
-  return res.json();
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    let errorMessage = "Registration failed";
+    
+    if (Array.isArray(data.detail)) {
+      errorMessage = data.detail
+        .map((e: unknown) => {
+          if (typeof e === "object" && e !== null && "loc" in e && "msg" in e) {
+            const detailError = e as { loc: unknown; msg: unknown };
+            const location = Array.isArray(detailError.loc)
+              ? detailError.loc.at(-1)
+              : detailError.loc;
+            return `${location}: ${detailError.msg}`;
+          }
+
+          return String(e);
+        })
+        .join(", ");
+    } else if (typeof data.detail === "string") {
+      errorMessage = data.detail;
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  return data; 
 }
 
 export async function createRegistrationPayload(form: { name: string; email: string; password: string }) {
 
   return {
-    userId: crypto.randomUUID(),
+    user_id: crypto.randomUUID(),
     name: form.name,
     email: form.email,
     password: form.password,

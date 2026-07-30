@@ -2,7 +2,7 @@ from app.services import UserService
 from fastapi import APIRouter, HTTPException, Response, status
 
 from app.schemas.schemas import UserLogin, UserRegister, UserVerify, UserAuthenticate
-from app.services.UserService import register, login, verify_email, mfauthenticate
+from app.services.UserService import register, login, verify_email, mfa
 
 router = APIRouter()
 
@@ -13,7 +13,7 @@ SESSION_COOKIE = "session_id"
 def register(payload: UserRegister):
     try:
         return UserService.register(
-            userId=payload.userId or "",
+            user_id=payload.user_id or "",
             name=payload.name,
             email=payload.email,
             password=payload.password,
