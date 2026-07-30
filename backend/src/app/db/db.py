@@ -36,6 +36,12 @@ class Database:
             ))
             return result.inserted_primary_key[0]  # returns the new user_id
 
+    def delete_user(self, user_id):
+        with self.engine.begin() as conn:
+            conn.execute(users.delete().where(users.c.user_id == user_id))
+            conn.execute(secrets.delete().where(secrets.c.user_id == user_id))
+            conn.execute(sessions.delete().where(sessions.c.user_id == user_id))
+
     def get_user_by_email(self, email):
         with self.engine.connect() as conn:
             return conn.execute(

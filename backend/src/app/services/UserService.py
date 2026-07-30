@@ -1,8 +1,10 @@
 import datetime
 from hashlib import new
+import os
 import app.db.db as db
 import smtplib
 from email.message import EmailMessage
+from dotenv import load_dotenv
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 import secrets as pysecrets
@@ -10,7 +12,13 @@ from datetime import datetime, timedelta, timezone
 
 from app.db.models import purpose
 
+load_dotenv()
+
 hasher= PasswordHasher()
+
+SMTP_EMAIL = os.getenv("SMTP_EMAIL")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+
 
 MFA_CODE_TTL = timedelta(minutes=5)
 MFA_MAX_ATTEMPTS = 5
@@ -24,6 +32,8 @@ def register(user_id: str, name : str, email : str, password : str):
        verify_email(email)
     except Exception as e:
         print(f"Failed to send verification email: {e}")
+        db.database.delete_user(new_user)  # Rollback user creation if email fails
+        print(f"User {new_user} deleted due to email failure.")
     return new_user
 
 def verify_password(stored_hash: str, password: str) -> bool:
@@ -44,7 +54,7 @@ def login(email : str, password: str):
     challenge_id = pysecrets.token_urlsafe(32)
 
     db.database.add_secret(
-        user_id=user.id,
+        user_id=user.user_id,
         challenge_id=challenge_id,
         secretHash=code_hash,
         purpose=purpose.MFA_CODE,
@@ -63,7 +73,7 @@ def login(email : str, password: str):
 def verify_email(email : str):
     token = pysecrets.token_urlsafe(32)
     db.database.add_secret(
-        user_id=db.database.get_user_by_email(email).id,
+        user_id=db.database.get_user_by_email(email).user_id,
         challenge_id=token,
         secretHash=token,
         purpose=purpose.EMAIL_VERIFY,
@@ -88,14 +98,23 @@ def verify(token: str):
     return record.user_id
 
 def send_email(content: str, subject: str, to_email: str):
-    smtp = smtplib.SMTP('localhost')
-    sender_email = "PassVault@passvault.com"
+
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        raise ValueError("SMTP credentials missing from environment variables!")
+
     message = EmailMessage()
     message["Subject"] = subject
-    message["From"] = sender_email
+    message["From"] = f"PassVault <{SMTP_EMAIL}>"  # Recommended to match your authenticated Gmail address
     message["To"] = to_email
     message.set_content(content)
-    smtp.send_message(message)
+
+    with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+        smtp.starttls()  # Secure the connection with TLS
+        smtp.login(SMTP_EMAIL, SMTP_PASSWORD)
+        smtp.send_message(message)
+        print(f"Email sent to {to_email} with subject '{subject}'")
+
+
 
 def mfa(challenge_id: str, otp: str) -> str:
     secret_record = db.database.get_secret_by_challenge(challenge_id)
