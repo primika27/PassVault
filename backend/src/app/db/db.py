@@ -90,6 +90,11 @@ class Database:
         with self.engine.begin() as conn:
             conn.execute(secrets.delete().where(secrets.c.id == secret_id))
 
+    def get_token_by_challenge(self, user_id, purpose):
+        with self.engine.connect() as conn:
+            return conn.execute(
+                secrets.select().where(secrets.c.user_id == user_id, secrets.c.purpose == purpose)
+            ).first()
 
     def increment_secret_attempts(self, secret_id):
         with self.engine.begin() as conn:

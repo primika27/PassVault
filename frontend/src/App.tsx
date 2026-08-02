@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import './App.css'
 import Home from './pages/Home';
 import Vault from './pages/Vault';
@@ -21,7 +21,10 @@ function App() {
         <Route element={<AuthLayout />}>
           <Route path='/' element={<Login />} />
           <Route path='/register' element={<Register />} />
-          <Route path='/verification' element={<Verification />} />
+          {/* canonical verification route */}
+          <Route path='/verify' element={<Verification />} />
+          {/* keep old path working by redirecting to canonical path */}
+          <Route path='/verification' element={<Navigate to="/verify" replace />} />
           <Route path='/mfa' element={<Mfa />} />
         </Route>
         <Route element={<NavbarLayout />}>

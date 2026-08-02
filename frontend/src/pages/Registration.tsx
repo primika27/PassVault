@@ -38,8 +38,11 @@ export default function Registration() {
 
       const response = await registerUser(payload);
       console.log("User registered successfully:c", response);
-      setMessage("Account created successfully, please check your email for verification."); 
-      navigate('/verification');
+      setMessage("Account created successfully, please check your email for verification.");
+      // navigate to verification page and pass user id so we can open a websocket
+      const userId = (response && (response.user_id || response.userId || response.id)) || "";
+      // navigate to canonical verification route
+      navigate(`/verify?userId=${encodeURIComponent(userId)}`);
     } catch (error) {
       console.error("Registration failed:", error);
       setMessage("Registration failed. Please try again.");

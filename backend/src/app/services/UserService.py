@@ -1,5 +1,4 @@
 import datetime
-from hashlib import new
 import os
 import app.db.db as db
 import smtplib
@@ -11,8 +10,14 @@ import secrets as pysecrets
 from datetime import datetime, timedelta, timezone
 
 from app.db.models import purpose
+from app.services.NotificationService import notify_user_verified
 
 load_dotenv()
+
+
+class EmailNotVerifiedError(Exception):
+    """Raised when a user attempts to log in but their email is not verified."""
+
 
 hasher= PasswordHasher()
 
@@ -29,11 +34,17 @@ def register(user_id: str, name : str, email : str, password : str):
     password_hash = hasher.hash(password)
     new_user = db.database.add_user(user_id, name, email, password_hash, False)
     try:
-       verify_email(email)
+        # send verification email and leave account unverified until user clicks link
+        verify_email(email)
     except Exception as e:
         print(f"Failed to send verification email: {e}")
-        db.database.delete_user(new_user)  # Rollback user creation if email fails
-        print(f"User {new_user} deleted due to email failure.")
+        # Rollback user creation if email fails
+        try:
+            db.database.delete_user(new_user.user_id if hasattr(new_user, 'user_id') else new_user)
+        except Exception:
+            pass
+        raise
+
     return new_user
 
 def verify_password(stored_hash: str, password: str) -> bool:
@@ -43,11 +54,17 @@ def verify_password(stored_hash: str, password: str) -> bool:
     except VerifyMismatchError:
         return False
 
+
+
 def login(email : str, password: str):
     user = db.database.get_user_by_email(email)
 
     if user is None or not verify_password(user.authHash, password):
         raise ValueError("Invalid credentials")
+
+    verified = db.database.get_user_verification_status(user.user_id)
+    if str(verified).lower() not in ("true", "verified", "1"):
+        raise EmailNotVerifiedError("Email not verified")
 
     code = f"{pysecrets.randbelow(1_000_000):06d}"  # random 6-digit code, zero-padded
     code_hash = hasher.hash(code)
@@ -84,6 +101,7 @@ def verify_email(email : str):
     subject = "Verify your email"
     content = f"Verify your email: http://localhost:5173/verify?token={token}"
     send_email(content, subject, email)
+    
 
 
 def verify(token: str):
@@ -94,8 +112,12 @@ def verify(token: str):
         db.database.delete_secret(record.id)
         raise ValueError("Invalid or expired verification link")
 
-    db.database.set_verification_status(record.user_id, "verified")
+    db.database.set_verification_status(record.user_id, "true")
     db.database.delete_secret(record.id)
+    try:
+        notify_user_verified(record.user_id)
+    except Exception:
+        pass
     return record.user_id
 
 def send_email(content: str, subject: str, to_email: str):
@@ -148,11 +170,11 @@ def mfa(challenge_id: str, otp: str) -> str:
     return session_id
 
 #email verification upon acc creation
-def get_status(userId : str):
-    return db.database.get_user_verification_status(userId)
+def get_status(user_id: str):
+    return db.database.get_user_verification_status(user_id)
 
-def get_salt(userId : str):
-    user = db.database.get_user_by_id(userId)
+def get_salt(user_id: str):
+    user = db.database.get_user_by_id(user_id)
     if user is None:
         raise ValueError("User not found")
     return user.kdfSalt

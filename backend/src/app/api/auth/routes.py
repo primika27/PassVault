@@ -1,5 +1,6 @@
 from app.services import UserService
 from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import WebSocket, WebSocketDisconnect
 
 from app.schemas.schemas import UserLogin, UserRegister, UserVerify, UserAuthenticate
 from app.services.UserService import register, login, verify_email, mfa
@@ -18,6 +19,7 @@ def register(payload: UserRegister):
             email=payload.email,
             password=payload.password,
         )
+        
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -62,14 +64,46 @@ def mfauthenticate(payload: UserAuthenticate, response: Response, mfa_challenge:
 @router.post("/verify")
 def verify(payload: UserVerify):
     try:
-        return UserService.verify_email(email=payload.email)
+        # frontend posts the token it received from the verification link
+        user_id = UserService.verify(token=payload.token)
+        return {"verified": True, "user_id": user_id}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    
-@router.get("/salt/{userId}")
-def get_salt(userId: str):
+
+
+@router.get("/verify/status/{user_id}")
+def verify_status(user_id: str):
     try:
-        return UserService.get_salt(userId=userId)
+        status = UserService.get_status(user_id)
+        # normalize boolean-ish responses
+        is_verified = bool(status) and str(status).lower() in ("true", "verified", "1")
+        return {"verified": is_verified}
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.websocket("/ws/verify/{user_id}")
+async def websocket_verify(websocket: WebSocket, user_id: str):
+    # WebSocket endpoint that notifies the client when the user's email is verified.
+    # Client should connect and wait for a JSON message { verified: true, user_id }
+    from app.services.NotificationService import get_manager
+
+    manager = get_manager()
+    await manager.connect(user_id, websocket)
+    try:
+        # keep the connection open until client disconnects or we notify and close
+        while True:
+            # optionally accept pings from client to keep alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+            await manager.disconnect(user_id, websocket)
+    except Exception:
+        await manager.disconnect(user_id, websocket)
+    
+@router.get("/salt/{user_id}")
+def get_salt(user_id: str):
+    try:
+        return UserService.get_salt(user_id=user_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
