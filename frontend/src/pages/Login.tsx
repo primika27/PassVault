@@ -61,7 +61,7 @@ export default function Login() {
     </Field>
     <Field>
       <FieldLabel htmlFor="password">password</FieldLabel>
-      <Input id="password" name="password" autoComplete="off" placeholder="enter password" value={form.password}
+      <Input id="password" name="password" autoComplete="off" placeholder="enter password" type="password" value={form.password}
               onChange={handleChange} />
     </Field>
     <Button onClick={handleLogin}>Login</Button>
