@@ -1,25 +1,28 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "../components/ui/input-otp"
 import { authenticateUser } from "../api/client";
+import { useNavigate } from "react-router-dom";
 
 export default function Mfa() {
+  const navigate = useNavigate();
 
   const [otp, setOtp] = useState("");
 
-   const handleAutoSubmit = async (code: string) => {
+   const handleAutoSubmit = useCallback(async (code: string) => {
     try {
       console.log("Verifying code:", code);
       const response = await authenticateUser({ verificationCode: code });
       console.log("Verification response:", response);
+      navigate("/home", { replace: true });
 
     } catch (error) {
       console.error("Verification failed", error);
     }
-  };
+  }, [navigate]);
 
   const maxLength = 6;
 
@@ -27,7 +30,7 @@ export default function Mfa() {
     if (otp.length === maxLength) {
       handleAutoSubmit(otp);
     }
-  }, [otp]);
+  }, [otp, handleAutoSubmit]);
     
 
     return (

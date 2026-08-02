@@ -61,7 +61,7 @@ export default function Verification() {
   if (status === "checking") return <p>Awaiting verification of your email...</p>;
   if (status === "success") return (<>
   <p>Your email is verified! You can now log in.</p>
-  <Button onClick={() => window.location.href = "/login"}>Log In</Button>
+  <Button onClick={() => window.location.href = "/"}>Log In</Button>
   </>
   );
   return <p>Verification failed or link expired.</p>;

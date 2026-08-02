@@ -1,5 +1,5 @@
 from app.services import UserService
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, HTTPException, Response, status
 from fastapi import WebSocket, WebSocketDisconnect
 
 from app.schemas.schemas import UserLogin, UserRegister, UserVerify, UserAuthenticate
@@ -9,6 +9,7 @@ router = APIRouter()
 
 MFA_COOKIE = "mfa_challenge"
 SESSION_COOKIE = "session_id"
+COOKIE_SECURE = False
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(payload: UserRegister):
@@ -33,19 +34,22 @@ def login(payload: UserLogin, response: Response):
 
     response.set_cookie(
         key=MFA_COOKIE, value=challenge_id,
-        httponly=True, secure=True, samesite="strict", max_age=300,  # 5 min
+        httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=300,  # 5 min
     )
     return {"mfaRequired": True, "next": "/mfa"}
 
 @router.post("/mfa")
-def mfauthenticate(payload: UserAuthenticate, response: Response, mfa_challenge: str | None = None):
+def mfauthenticate(
+    payload: UserAuthenticate,
+    response: Response,
+    mfa_challenge: str | None = Cookie(default=None, alias=MFA_COOKIE),
+):
     if not mfa_challenge:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="MFA challenge cookie missing or expired. Please log in again."
         )
     try:
-        # Pass the challenge_id from cookie AND the otp from body
         session_id = UserService.mfa(
             challenge_id=mfa_challenge, 
             otp=payload.otp
@@ -55,7 +59,7 @@ def mfauthenticate(payload: UserAuthenticate, response: Response, mfa_challenge:
 
     # Set the permanent session cookie and clear the temp mfa_challenge cookie
     response.set_cookie(
-        key="session_id", value=session_id, httponly=True, secure=True, samesite="strict", max_age=604800
+        key=SESSION_COOKIE, value=session_id, httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=604800
     )
     response.delete_cookie("mfa_challenge")
 
@@ -64,7 +68,6 @@ def mfauthenticate(payload: UserAuthenticate, response: Response, mfa_challenge:
 @router.post("/verify")
 def verify(payload: UserVerify):
     try:
-        # frontend posts the token it received from the verification link
         user_id = UserService.verify(token=payload.token)
         return {"verified": True, "user_id": user_id}
     except ValueError as exc:

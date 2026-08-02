@@ -60,6 +60,13 @@ class Database:
                 users.update().where(users.c.user_id == user_id).values(verification_status=status)
             )
 
+    def get_user_verification_status(self, user_id):
+        with self.engine.connect() as conn:
+            result = conn.execute(
+                users.select().where(users.c.user_id == user_id)
+            ).first()
+            return result.verification_status if result else None
+
     def add_secret(self, user_id, challenge_id, secretHash, purpose, expiration, attempts):
         with self.engine.begin() as conn:
             conn.execute(secrets.insert().values(

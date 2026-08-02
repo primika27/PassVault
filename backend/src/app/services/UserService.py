@@ -29,6 +29,12 @@ MFA_CODE_TTL = timedelta(minutes=5)
 MFA_MAX_ATTEMPTS = 5
 SESSION_TTL = timedelta(days=7)
 
+
+def _as_utc_datetime(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
 #creating account
 def register(user_id: str, name : str, email : str, password : str):
     password_hash = hasher.hash(password)
@@ -63,7 +69,7 @@ def login(email : str, password: str):
         raise ValueError("Invalid credentials")
 
     verified = db.database.get_user_verification_status(user.user_id)
-    if str(verified).lower() not in ("true", "verified", "1"):
+    if str(verified).lower() not in ("true", "1", "verified") and verified is not True:
         raise EmailNotVerifiedError("Email not verified")
 
     code = f"{pysecrets.randbelow(1_000_000):06d}"  # random 6-digit code, zero-padded
@@ -79,12 +85,16 @@ def login(email : str, password: str):
         expiration=datetime.now(timezone.utc) + MFA_CODE_TTL,
         attempts=0,
     )
-
-    send_email(
-        content=f"Your PassVault verification code is: {code}",
-        subject="Your login code",
-        to_email=user.email,
-    )
+    try:
+        send_email(
+            content=f"Your PassVault verification code is: {code}",
+            subject="Your login code",
+            to_email=user.email,
+        )
+    except Exception as e:
+        print(f"Failed to send MFA email: {e}")
+        db.database.delete_secret(challenge_id)
+        raise ValueError("Failed to send MFA code. Please try again later.")
     
     return challenge_id
 
@@ -108,11 +118,11 @@ def verify(token: str):
     record = db.database.get_secret_by_challenge(token)
     if record is None or record.purpose != purpose.EMAIL_VERIFY:
         raise ValueError("Invalid or expired verification link")
-    if datetime.now(timezone.utc) > record.expiration:
+    if datetime.now(timezone.utc) > _as_utc_datetime(record.expiration):
         db.database.delete_secret(record.id)
         raise ValueError("Invalid or expired verification link")
 
-    db.database.set_verification_status(record.user_id, "true")
+    db.database.set_verification_status(record.user_id, True)
     db.database.delete_secret(record.id)
     try:
         notify_user_verified(record.user_id)
@@ -144,7 +154,7 @@ def mfa(challenge_id: str, otp: str) -> str:
     if not secret_record or secret_record.purpose != purpose.MFA_CODE:
         raise ValueError("Invalid or expired MFA session.")
 
-    if datetime.now(timezone.utc) > secret_record.expiration:
+    if datetime.now(timezone.utc) > _as_utc_datetime(secret_record.expiration):
         db.database.delete_secret(secret_record.id)
         raise ValueError("MFA code has expired. Please log in again.")
 

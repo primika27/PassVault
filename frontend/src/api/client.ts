@@ -1,6 +1,6 @@
 
 // src/api/client.ts
-export const API_BASE_URL = "http://127.0.0.1:8000";
+export const API_BASE_URL = "http://localhost:8000";
 
 export async function healthCheck() {
   const res = await fetch(`${API_BASE_URL}/health`);
@@ -88,6 +88,7 @@ export async function createLoginPayload(form: { email: string; password: string
 }
 
 export async function verifyEmail(token: string) {
+  
   const res = await fetch(`${API_BASE_URL}/verify`, {
     method: "POST",
     credentials: "include",
@@ -104,7 +105,13 @@ export async function authenticateUser(authData: { verificationCode: string }) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ otp: authData.verificationCode }),
   });
-  return res.json();
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(typeof data?.detail === "string" ? data.detail : "MFA verification failed");
+  }
+
+  return data as { message: string };
 }
 
 export async function loginUser(loginData: { email: string; password: string }) {
