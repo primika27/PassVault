@@ -1,6 +1,6 @@
 
 // src/api/client.ts
-export const API_BASE_URL = "http://localhost:8000";
+export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export async function healthCheck() {
   const res = await fetch(`${API_BASE_URL}/health`);
@@ -10,6 +10,7 @@ export async function healthCheck() {
 export async function getSalt(email: string) {
   const res = await fetch(`${API_BASE_URL}/salt?email=${email}`, {
     method: "GET",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },

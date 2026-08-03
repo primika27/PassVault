@@ -142,7 +142,7 @@ def send_email(content: str, subject: str, to_email: str):
     message.set_content(content)
 
     with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
-        smtp.starttls()  # Secure the connection with TLS
+        smtp.starttls()  
         smtp.login(SMTP_EMAIL, SMTP_PASSWORD)
         smtp.send_message(message)
         print(f"Email sent to {to_email} with subject '{subject}'")
