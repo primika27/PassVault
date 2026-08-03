@@ -17,14 +17,15 @@ app = FastAPI(title="PassVault backend", lifespan=lifespan)
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:5173",
     "https://passvault.primika.me",
-    "https://*.vercel.app"
 ]
 
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

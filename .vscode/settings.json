@@ -3,7 +3,8 @@
         "Navbar",
         "configuration fix to run backend",
         "session mfa management",
-        "email verification"
+        "email verification",
+        "deploy"
     ],
     "cSpell.words": [
         "pysecrets"
