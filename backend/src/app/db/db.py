@@ -1,12 +1,34 @@
+import os
 from pathlib import Path
-
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, MetaData
 from .models import metadata_obj, users, secrets, sessions
 
-DB_FILE = Path(__file__).resolve().parents[2] / "users.db"
-DATABASE_URL = f"sqlite:///{DB_FILE.as_posix()}"
+load_dotenv()
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    db_driver = os.getenv("DB_DRIVER", "sqlite")
+    
+    if db_driver == "sqlite":
+        # Default local SQLite fallback
+        DB_FILE = Path(__file__).resolve().parents[2] / "users.db"
+        DATABASE_URL = f"sqlite:///{DB_FILE.as_posix()}"
+    else:
+        user = os.getenv("DB_USER")
+        password = os.getenv("DB_PASSWORD")
+        host = os.getenv("DB_HOST", "localhost")
+        port = os.getenv("DB_PORT", "5432")
+        db_name = os.getenv("DB_NAME")
+        
+        DATABASE_URL = f"{db_driver}://{user}:{password}@{host}:{port}/{db_name}"
+
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args["check_same_thread"] = False
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 def create_db_and_tables():
     with engine.connect() as conn:
