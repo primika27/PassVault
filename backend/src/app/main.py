@@ -16,8 +16,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="PassVault backend", lifespan=lifespan)
 
 origins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
     "https://passvault.primika.me",
 ]
 

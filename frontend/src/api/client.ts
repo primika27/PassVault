@@ -1,6 +1,6 @@
 
 // src/api/client.ts
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+export const API_BASE_URL = import.meta.env.BASE_API_URL ;
 
 export async function healthCheck() {
   const res = await fetch(`${API_BASE_URL}/health`);
