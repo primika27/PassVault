@@ -8,9 +8,10 @@ class UserRegister(BaseModel):
     user_id: str | None = None
     email: EmailStr
     name: str
-    password: str
+    auth_salt: str
+    auth_hash: str
 
-    @field_validator("password")
+    @field_validator("auth_hash")
     @classmethod
     def password_strength(cls, v: str) -> str:
         if len(v) < 8:
@@ -19,7 +20,7 @@ class UserRegister(BaseModel):
     
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    auth_hash: str
 
 class UserAuthenticate(BaseModel):
     otp: str

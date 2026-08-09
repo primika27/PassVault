@@ -25,13 +25,14 @@ class Database:
     def __init__(self, engine):
         self.engine = engine
 
-    def add_user(self, user, name, email, password, verification_status):
+    def add_user(self, user, name, email, auth_salt, pass_hash, verification_status):
         with self.engine.begin() as conn:
             result = conn.execute(users.insert().values(
                 user_id=user,
                 username=name,
                 email=email,
-                authHash=password,
+                auth_salt=auth_salt,
+                pass_hash=pass_hash,
                 verification_status=verification_status,
             ))
             return result.inserted_primary_key[0]  # returns the new user_id
@@ -110,5 +111,13 @@ class Database:
                     attempts=secrets.c.attempts + 1
                 )
             )
+
+    def get_salt_by_email(self, email):
+        with self.engine.connect() as conn:
+            return conn.execute(
+                users.select(users.c.auth_salt).where(users.c.email == email)
+            ).first()
+
+
   
 database = Database(engine)

@@ -18,7 +18,7 @@ def register(payload: UserRegister):
             user_id=payload.user_id or "",
             name=payload.name,
             email=payload.email,
-            password=payload.password,
+            auth_hash=payload.auth_hash,
         )
         
     except ValueError as exc:
@@ -28,7 +28,7 @@ def register(payload: UserRegister):
 @router.post("/login")
 def login(payload: UserLogin, response: Response):
     try:
-        challenge_id = UserService.login(email=payload.email, password=payload.password)
+        challenge_id = UserService.login(email=payload.email, auth_hash=payload.auth_hash)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 

@@ -4,7 +4,8 @@
         "configuration fix to run backend",
         "session mfa management",
         "email verification",
-        "deploy"
+        "deploy",
+        "Docker setup for database and backend"
     ],
     "cSpell.words": [
         "pysecrets"

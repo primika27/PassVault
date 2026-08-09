@@ -11,8 +11,8 @@ users = Table('users', metadata_obj,
     Column('user_id', String, primary_key=True),
     Column('username', String, unique=True, nullable=False, index=True),
     Column('email', String, unique=True, nullable=False),
-    Column('authHash', String, nullable=False),
-    # Column('kdfSalt', String, nullable=False),
+    Column('pass_hash', String, nullable=False),# Server-side hash of client's auth_hash
+    Column('auth_salt', String, nullable=False),# Public salt for client derivation
     Column('verification_status', Boolean, nullable=False)
 )
 

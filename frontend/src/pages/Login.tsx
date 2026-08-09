@@ -35,7 +35,7 @@ export default function Login() {
         try {
           const response = await loginUser({
             email: loginData.email,
-            password: loginData.password,
+            auth_hash: loginData.auth_hash,
           });
           if (response.mfaRequired) {
             navigate(response.next ?? "/mfa");

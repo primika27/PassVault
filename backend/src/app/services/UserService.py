@@ -36,9 +36,10 @@ def _as_utc_datetime(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 #creating account
-def register(user_id: str, name : str, email : str, password : str):
-    password_hash = hasher.hash(password)
-    new_user = db.database.add_user(user_id, name, email, password_hash, False)
+def register(user_id: str, name : str, email : str, auth_salt : str, auth_hash : str):
+
+    pass_hash = hasher.hash(auth_hash)
+    new_user = db.database.add_user(user_id, name, email, auth_salt, pass_hash, False)
     try:
         # send verification email and leave account unverified until user clicks link
         verify_email(email)
@@ -53,19 +54,20 @@ def register(user_id: str, name : str, email : str, password : str):
 
     return new_user
 
-def verify_password(stored_hash: str, password: str) -> bool:
+def verify_password(auth_hash: str, auth_hash_client: str) -> bool:
     try:
-        hasher.verify(stored_hash, password)
+        hasher.verify(auth_hash, auth_hash_client)
         return True
     except VerifyMismatchError:
         return False
 
 
 
-def login(email : str, password: str):
+
+def login(email : str, auth_hash: str):
     user = db.database.get_user_by_email(email)
 
-    if user is None or not verify_password(user.authHash, password):
+    if user is None or not verify_password(user.auth_hash, auth_hash):
         raise ValueError("Invalid credentials")
 
     verified = db.database.get_user_verification_status(user.user_id)
@@ -183,11 +185,11 @@ def mfa(challenge_id: str, otp: str) -> str:
 def get_status(user_id: str):
     return db.database.get_user_verification_status(user_id)
 
-def get_salt(user_id: str):
-    user = db.database.get_user_by_id(user_id)
+def get_salt(email: str):
+    user = db.database.get_user_by_email(email)
     if user is None:
         raise ValueError("User not found")
-    return user.kdfSalt
+    return user.auth_salt
 
 
 

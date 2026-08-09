@@ -1,4 +1,4 @@
-
+import argon2 from "argon2-browser";
 // src/api/client.ts
 export const API_BASE_URL = import.meta.env.BASE_API_URL ;
 
@@ -32,7 +32,8 @@ export async function registerUser(userData: {
   user_id: string; 
   name: string; 
   email: string; 
-  password: string; 
+  auth_salt: string;
+  auth_hash: string; 
 }) {
   const res = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
@@ -71,20 +72,51 @@ export async function registerUser(userData: {
   return data; 
 }
 
+export function generateSalt(): string {
+  const array = new Uint8Array(16);
+  window.crypto.getRandomValues(array);
+  return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function deriveAuthHash(password: string, salt: string): Promise<string> {
+  const result = await argon2.hash({
+    pass: password,
+    salt: salt,
+    time: 3,
+    mem: 65536, // 64 MB
+    hashLen: 32,
+    type: argon2.ArgonType.Argon2id,
+  });
+  return result.encoded; 
+}
+
 export async function createRegistrationPayload(form: { name: string; email: string; password: string }) {
 
+  //generate salt and hash the password
+  const authSalt = generateSalt();
+  const authHash = await deriveAuthHash(form.password, authSalt);
+  
   return {
     user_id: crypto.randomUUID(),
     name: form.name,
     email: form.email,
-    password: form.password,
+    auth_salt: authSalt,
+    auth_hash: authHash,
   };
 }
 
 export async function createLoginPayload(form: { email: string; password: string }) {
+  
+  const { salt } = await getSalt(form.email);
+  if (!salt) {
+    throw new Error("User not found or missing salt");
+  }
+
+  const authHash = await deriveAuthHash(form.password, salt);
+
   return {
     email: form.email,
-    password: form.password,
+    auth_hash: authHash,
   };
 }
 
@@ -115,7 +147,7 @@ export async function authenticateUser(authData: { verificationCode: string }) {
   return data as { message: string };
 }
 
-export async function loginUser(loginData: { email: string; password: string }) {
+export async function loginUser(loginData: { email: string; auth_hash: string }) {
   
   const res = await fetch(`${API_BASE_URL}/login`, {
     method: "POST",
