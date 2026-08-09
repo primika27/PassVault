@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, select
 from .models import metadata_obj, users, secrets, sessions
 
 DB_FILE = Path(__file__).resolve().parents[2] / "users.db"
@@ -112,11 +112,11 @@ class Database:
                 )
             )
 
-    def get_salt_by_email(self, email):
+    def get_salt_by_email(self, email: str):
         with self.engine.connect() as conn:
-            return conn.execute(
-                users.select(users.c.auth_salt).where(users.c.email == email)
-            ).first()
+            stmt = select(users.c.auth_salt).where(users.c.email == email)
+            result = conn.execute(stmt).first()
+            return result.auth_salt if result else None
 
 
   
