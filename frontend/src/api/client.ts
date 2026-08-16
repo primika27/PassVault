@@ -1,4 +1,4 @@
-import argon2 from "argon2-browser";
+import { argon2id } from 'hash-wasm';
 // src/api/client.ts
 export const API_BASE_URL = import.meta.env.BASE_API_URL ;
 
@@ -21,6 +21,7 @@ export async function getSalt(email: string) {
 export async function getVerificationCode(email: string) {
   const res = await fetch(`${API_BASE_URL}/verification-code?email=${email}`, {
     method: "GET",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -79,15 +80,16 @@ export function generateSalt(): string {
 }
 
 export async function deriveAuthHash(password: string, salt: string): Promise<string> {
-  const result = await argon2.hash({
-    pass: password,
-    salt: salt,
-    time: 3,
-    mem: 65536, // 64 MB
-    hashLen: 32,
-    type: argon2.ArgonType.Argon2id,
+  const hash = await argon2id({
+    password: password,
+    salt,
+    parallelism: 1,
+    iterations: 3,
+    memorySize: 65536, // 64 MB in KiB
+    hashLength: 32,
+    outputType: 'encoded'
   });
-  return result.encoded; 
+  return hash; 
 }
 
 export async function createRegistrationPayload(form: { name: string; email: string; password: string }) {

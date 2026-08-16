@@ -1,0 +1,30 @@
+# Root & Subdirectory Dependencies
+node_modules/
+**/node_modules/
+
+# Build & Cache Outputs
+dist/
+dist-ssr/
+.vite/
+*.wasm
+
+# Python Bytecode & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+backend/**/__pycache__/
+.venv/
+venv/
+env/
+
+# Environment & Config
+.env
+.env.*
+!.env.example
+
+# IDEs & OS
+.vscode/
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.log
