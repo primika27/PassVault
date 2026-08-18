@@ -164,7 +164,7 @@ def mfa(challenge_id: str, otp: str) -> str:
         db.database.delete_secret(secret_record.id)
         raise ValueError("Too many failed attempts. Please log in again.")
 
-    if not verify_password(stored_hash=secret_record.secretHash, password=otp):
+    if not verify_password(secret_record.secretHash, otp):
         db.database.increment_secret_attempts(secret_record.id)
         raise ValueError("Invalid verification code.")
 
