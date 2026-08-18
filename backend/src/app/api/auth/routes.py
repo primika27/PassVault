@@ -18,6 +18,7 @@ def register(payload: UserRegister):
             user_id=payload.user_id or "",
             name=payload.name,
             email=payload.email,
+            auth_salt=payload.auth_salt,
             auth_hash=payload.auth_hash,
         )
         
@@ -103,10 +104,10 @@ async def websocket_verify(websocket: WebSocket, user_id: str):
     except Exception:
         await manager.disconnect(user_id, websocket)
     
-@router.get("/salt/{user_id}")
-def get_salt(user_id: str):
+@router.get("/salt")
+def get_salt(email: str):
     try:
-        return UserService.get_salt(user_id=user_id)
+        return UserService.get_salt(email=email)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

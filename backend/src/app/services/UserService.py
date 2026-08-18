@@ -67,7 +67,7 @@ def verify_password(auth_hash: str, auth_hash_client: str) -> bool:
 def login(email : str, auth_hash: str):
     user = db.database.get_user_by_email(email)
 
-    if user is None or not verify_password(user.auth_hash, auth_hash):
+    if user is None or not verify_password(user.pass_hash, auth_hash):
         raise ValueError("Invalid credentials")
 
     verified = db.database.get_user_verification_status(user.user_id)
@@ -189,7 +189,7 @@ def get_salt(email: str):
     user = db.database.get_user_by_email(email)
     if user is None:
         raise ValueError("User not found")
-    return user.auth_salt
+    return {"salt": user.auth_salt}
 
 
 

@@ -1,6 +1,6 @@
 import { argon2id } from 'hash-wasm';
-// src/api/client.ts
-export const API_BASE_URL = import.meta.env.BASE_API_URL ;
+
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export async function healthCheck() {
   const res = await fetch(`${API_BASE_URL}/health`);
@@ -15,6 +15,12 @@ export async function getSalt(email: string) {
       "Content-Type": "application/json",
     },
   });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Failed to fetch salt (${res.status}): ${errorText}`);
+  }
+  
   return res.json();
 }
 
