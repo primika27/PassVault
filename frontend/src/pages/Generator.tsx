@@ -66,7 +66,7 @@ export default function Generator() {
 
   return (
     <div className="w-full max-w-2xl mx-auto rounded-2xl bg-zinc-950 text-white p-6 shadow-2xl border border-zinc-700/50 flex flex-col gap-6">
-      
+      <h2 className="text-2xl font-bold text-center">Password Generator</h2>
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-zinc-900/90 border border-zinc-700/50">
         <div className="flex items-center gap-2.5">
           <span className="text-sm font-bold text-zinc-100 tracking-wide">
