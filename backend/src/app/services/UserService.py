@@ -1,5 +1,7 @@
 import datetime
 import os
+
+from django.conf.locale import tr
 import app.db.db as db
 import smtplib
 from email.message import EmailMessage
@@ -216,14 +218,13 @@ def get_vault_item(user_id: str, session_id: str, item_id: str):
     raise ValueError("Vault item not found")
 
 
-def create_vault_item(user_id: str, session_id: str, item_data: dict):
+
+def create_vault_item(id: str, user_id: str, session_id: str, item_data: dict):
     session = db.database.get_session_by_id(session_id)
     if not session or session.user_id != user_id:
-        raise ValueError("Invalid or expired session. Please log in again.")
-
-    item_id = pysecrets.token_urlsafe(16)  
+        raise ValueError("Invalid or expired session. Please log in again.")    
     db.database.add_vault_item(
-        id=item_id,
+        id=id,
         user_id=user_id,
         encrypted_data=item_data["encrypted_data"],
         created_at=datetime.now(timezone.utc),

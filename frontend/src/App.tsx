@@ -13,9 +13,11 @@ import About from './pages/About';
 import Profile from './pages/Profile';
 import Mfa from './pages/Mfa';
 import Verification from './pages/Verification';
+import { VaultProvider } from './context/VaultContext';
 
 function App() {
   return (
+    <VaultProvider>
     <Router>
       <Routes>
         <Route element={<AuthLayout />}>
@@ -37,6 +39,7 @@ function App() {
         </Route>
       </Routes>
     </Router>
+    </VaultProvider>
   )
 }
 

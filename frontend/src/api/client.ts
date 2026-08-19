@@ -1,6 +1,6 @@
 import { argon2id } from 'hash-wasm';
 import {passwordVault} from './passwordVault';
-import { encryptVaultEntry } from '../utils/passwordVault';
+import { encryptVaultEntry, type VaultEntry } from '../utils/passwordVault';
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 export interface EncryptedVaultItem {
   id: string;
@@ -98,7 +98,7 @@ export async function deriveAuthHash(password: string, salt: string): Promise<st
     salt,
     parallelism: 1,
     iterations: 3,
-    memorySize: 65536, // 64 MB in KiB
+    memorySize: 65536,
     hashLength: 32,
     outputType: 'encoded'
   });
@@ -127,14 +127,32 @@ export async function createLoginPayload(form: { email: string; password: string
     throw new Error("User not found or missing salt");
   }
 
-  const authHash = await deriveAuthHash(form.password, salt);
+  const [authHash, masterKey] = await Promise.all([
+    deriveAuthHash(form.password, salt),
+    deriveMasterKey(form.password, salt),
+  ]);
 
-  return {
-    email: form.email,
-    auth_hash: authHash,
+return {
+    loginData: {
+      email: form.email,
+      auth_hash: authHash,
+    },
+    masterKey, 
   };
 }
 
+export async function deriveMasterKey(password: string, salt: string): Promise<Uint8Array> {
+  const binaryKey = await argon2id({
+    password: password,
+    salt: `enc:${salt}`, // Prefix ensures encryption key is mathematically distinct from auth hash
+    parallelism: 1,
+    iterations: 3,
+    memorySize: 65536, // 64 MB in KiB
+    hashLength: 32,    // 32 bytes (256 bits) required by XChaCha20
+    outputType: 'binary' // Returns Uint8Array directly
+  });
+  return binaryKey;
+}
 
 export async function verifyEmail(token: string) {
   
@@ -208,14 +226,19 @@ export async function fetchVaultItemById(itemId: string): Promise<EncryptedVault
   return data.vault_item;
 }
 
-export async function saveVaultItem(payload: { encrypted_data: string }) {
+export async function createVaultItemPayload(entry: VaultEntry, masterKey: Uint8Array) {
+  const id=crypto.randomUUID();
+  const encryptedData = encryptVaultEntry(entry, masterKey);
+  return { id, encrypted_data: encryptedData };
+}
+export async function saveVaultItem(VaultItemPayload: { id: string; encrypted_data: string }) {
   const res = await fetch(`${API_BASE_URL}/vault`, {
     method: "POST",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(VaultItemPayload),
   });
 
   const data = await res.json();

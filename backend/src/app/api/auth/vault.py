@@ -8,7 +8,6 @@ from backend.src.app.services import UserService
 
 router = APIRouter(prefix="/vault", tags=["vault"])
 
-# 1. Fetch ALL vault items for the authenticated user
 @router.get("", response_model=dict)
 def get_all_vault_items(session_id: str | None = Cookie(default=None, alias=SESSION_COOKIE)):
     if not session_id:
@@ -21,7 +20,6 @@ def get_all_vault_items(session_id: str | None = Cookie(default=None, alias=SESS
     vault_items = UserService.get_all_vault_items(session_id=session_id)
     return {"vault": vault_items}
 
-# 2. Fetch a SINGLE vault item by ID
 @router.get("/{item_id}", response_model=dict)
 def get_single_vault_item(
     item_id: str,
@@ -50,7 +48,6 @@ def create_vault_item(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session cookie missing or expired."
         )
-    
-    # Create a new vault item for the authenticated user
+
     new_item = UserService.create_vault_item(session_id=session_id, item_data=item_data)
     return {"vault_item": new_item}

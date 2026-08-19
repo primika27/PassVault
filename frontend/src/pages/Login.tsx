@@ -10,10 +10,12 @@ import {
 import { Input } from "../components/ui/input";
 import { Button } from "#components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
+import { useVault } from "../context/VaultContext";
 
 export default function Login() {
   const navigate = useNavigate();
-
+  const { setMasterKey } = useVault();
+  
   useEffect(() => {
     healthCheck().then(console.log);
   }, []);
@@ -28,7 +30,7 @@ export default function Login() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
   const handleLogin = async () => {
-    const loginData = await createLoginPayload({
+    const { loginData, masterKey } = await createLoginPayload({
       email: form.name,
       password: form.password,
     });
@@ -37,13 +39,12 @@ export default function Login() {
             email: loginData.email,
             auth_hash: loginData.auth_hash,
           });
+          setMasterKey(masterKey);
           if (response.mfaRequired) {
             navigate(response.next ?? "/mfa");
             return;
           }
           console.log("User logged in successfully:", response);
-
-        
         } catch (error) {
           console.error("Login failed:", error);
         }

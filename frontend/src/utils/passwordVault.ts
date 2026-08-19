@@ -3,7 +3,7 @@ import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
 import { bytesToHex, hexToBytes, managedNonce } from '@noble/ciphers/utils.js';
 
 export type VaultEntry = {
-  id?: string;
+  id: string;
   title: string;
   username: string;
   password: string;
