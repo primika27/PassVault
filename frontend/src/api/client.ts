@@ -1,5 +1,4 @@
 import { argon2id } from 'hash-wasm';
-import {passwordVault} from './passwordVault';
 import { encryptVaultEntry, type VaultEntry } from '../utils/passwordVault';
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 export interface EncryptedVaultItem {

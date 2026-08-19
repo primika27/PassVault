@@ -18,14 +18,12 @@ export const Vault = () => {
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
-  // Form states
   const [title, setTitle] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [url, setUrl] = useState("");
   const [notes, setNotes] = useState("");
 
-  // 1. Fetch and decrypt all entries on mount (passwords remain hidden by default)
   useEffect(() => {
     async function loadVault() {
       if (!masterKey) return;
@@ -216,8 +214,6 @@ export const Vault = () => {
                     </p>
                   )}
                 </div>
-
-                {/* Right Side: Masked Password & Action Controls */}
                 <div className="flex items-center gap-3 self-end md:self-center">
                   <div className="bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 min-w-[140px] text-center font-mono text-sm text-zinc-200 select-all">
                     {isRevealed ? entry.password : "••••••••••••"}
