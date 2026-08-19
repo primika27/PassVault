@@ -29,3 +29,9 @@ class UserAuthenticate(BaseModel):
 class UserVerify(BaseModel):
     token: str
 
+class VaultItem(BaseModel):
+    id: str | None = None
+    user_id: str | None = None
+    encrypted_data: str
+    created_at: str | None = None
+    updated_at: str | None = None

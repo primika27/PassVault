@@ -61,8 +61,13 @@ def verify_password(auth_hash: str, auth_hash_client: str) -> bool:
     except VerifyMismatchError:
         return False
 
+def get_vault(user_id: str, session_id: str):
+    session = db.database.get_session_by_id(session_id)
+    if not session or session.user_id != user_id:
+        raise ValueError("Invalid or expired session. Please log in again.")
 
-
+    vault_items = db.database.get_vault_items_by_user(user_id)
+    return vault_items
 
 def login(email : str, auth_hash: str):
     user = db.database.get_user_by_email(email)
@@ -191,6 +196,37 @@ def get_salt(email: str):
         raise ValueError("User not found")
     return {"salt": user.auth_salt}
 
+def get_all_vault_items(user_id: str, session_id: str):
+    session = db.database.get_session_by_id(session_id)
+    if not session or session.user_id != user_id:
+        raise ValueError("Invalid or expired session. Please log in again.")
+
+    vault_items = db.database.vault_items_by_user(user_id)
+    return vault_items
+
+def get_vault_item(user_id: str, session_id: str, item_id: str):
+    session = db.database.get_session_by_id(session_id)
+    if not session or session.user_id != user_id:
+        raise ValueError("Invalid or expired session. Please log in again.")
+
+    vault_items = db.database.vault_items_by_user(user_id)
+    for item in vault_items:
+        if item.id == item_id:
+            return item
+    raise ValueError("Vault item not found")
 
 
+def create_vault_item(user_id: str, session_id: str, item_data: dict):
+    session = db.database.get_session_by_id(session_id)
+    if not session or session.user_id != user_id:
+        raise ValueError("Invalid or expired session. Please log in again.")
 
+    item_id = pysecrets.token_urlsafe(16)  
+    db.database.add_vault_item(
+        id=item_id,
+        user_id=user_id,
+        encrypted_data=item_data["encrypted_data"],
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
+    )
+    return {"id": item_id, "encrypted_data": item_data["encrypted_data"]}

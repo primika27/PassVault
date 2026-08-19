@@ -118,6 +118,10 @@ class Database:
             result = conn.execute(stmt).first()
             return result.auth_salt if result else None
 
-
+    def vault_items_by_user(self, user_id):
+        with self.engine.connect() as conn:
+            return conn.execute(
+                vault_items.select().where(vault_items.c.user_id == user_id)
+            ).fetchall()
   
 database = Database(engine)

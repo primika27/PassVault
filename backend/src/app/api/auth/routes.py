@@ -111,3 +111,13 @@ def get_salt(email: str):
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+
+@router.get("/vault")
+def get_vault(user_id: str, session_id: str | None = Cookie(default=None, alias=SESSION_COOKIE)):
+    if not session_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session cookie missing or expired. Please log in again.")
+    try:
+        vault_items = UserService.get_vault(user_id=user_id, session_id=session_id)
+        return {"vault": vault_items}
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

@@ -1,7 +1,14 @@
 import { argon2id } from 'hash-wasm';
-
+import {passwordVault} from './passwordVault';
+import { encryptVaultEntry } from '../utils/passwordVault';
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-
+export interface EncryptedVaultItem {
+  id: string;
+  user_id: string;
+  encrypted_data: string;
+  created_at: string;
+  updated_at: string;
+}
 export async function healthCheck() {
   const res = await fetch(`${API_BASE_URL}/health`);
   return res.json();
@@ -128,6 +135,7 @@ export async function createLoginPayload(form: { email: string; password: string
   };
 }
 
+
 export async function verifyEmail(token: string) {
   
   const res = await fetch(`${API_BASE_URL}/verify`, {
@@ -172,4 +180,47 @@ export async function loginUser(loginData: { email: string; auth_hash: string })
   }
 
   return data as { mfaRequired: boolean; next?: string };
+}
+
+export async function fetchVault(): Promise<EncryptedVaultItem[]> {
+  const res = await fetch(`${API_BASE_URL}/vault`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.detail || "Failed to fetch vault");
+  }
+  return data.vault;
+}
+
+export async function fetchVaultItemById(itemId: string): Promise<EncryptedVaultItem> {
+  const res = await fetch(`${API_BASE_URL}/vault/${itemId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.detail || "Failed to fetch vault item");
+  }
+  return data.vault_item;
+}
+
+export async function saveVaultItem(payload: { encrypted_data: string }) {
+  const res = await fetch(`${API_BASE_URL}/vault`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.detail || "Failed to save vault item");
+  }
+  return data as { id: string; message: string };
 }
