@@ -130,5 +130,17 @@ class Database:
             conn.execute(sessions.update().where(sessions.c.session_id == session_id).values(
                 expires_at=datetime.now(timezone.utc)
             ))
+    def get_user_id_by_session(self, session_id):
+        with self.engine.connect() as conn:
+            result = conn.execute(
+                sessions.select().where(sessions.c.session_id == session_id)
+            ).first()
+            return result.user_id if result else None
+        
+    def get_session_by_id(self, session_id):
+        with self.engine.connect() as conn:
+            return conn.execute(
+                sessions.select().where(sessions.c.session_id == session_id)
+            ).first()
   
 database = Database(engine)

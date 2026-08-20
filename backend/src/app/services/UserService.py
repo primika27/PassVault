@@ -206,9 +206,9 @@ def get_salt(email: str):
         raise ValueError("User not found")
     return {"salt": user.auth_salt}
 
-def get_all_vault_items(user_id: str, session_id: str):
-    session = db.database.get_session_by_id(session_id)
-    if not session or session.user_id != user_id:
+def get_all_vault_items(session_id: str):
+    user_id = db.database.get_user_id_by_session(session_id)
+    if not user_id:
         raise ValueError("Invalid or expired session. Please log in again.")
 
     vault_items = db.database.vault_items_by_user(user_id)
