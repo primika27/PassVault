@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 from app.services import UserService
 from app.api.auth.routes import SESSION_COOKIE
+from app.schemas.schemas import VaultItem
+
 router = APIRouter(prefix="/vault", tags=["vault"])
 
 @router.get("", response_model=dict)
@@ -38,7 +40,7 @@ def get_single_vault_item(
 
 @router.post("", response_model=dict)
 def create_vault_item(
-    item_data: dict,
+    item_data: VaultItem,
     session_id: str | None = Cookie(default=None, alias=SESSION_COOKIE)
 ):
     if not session_id:
