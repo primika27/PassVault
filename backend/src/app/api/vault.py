@@ -2,10 +2,8 @@
 from fastapi import APIRouter, Cookie, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import List, Optional
-
-from backend.src.app.api.auth.routes import SESSION_COOKIE
-from backend.src.app.services import UserService
-
+from app.services import UserService
+from app.api.auth.routes import SESSION_COOKIE
 router = APIRouter(prefix="/vault", tags=["vault"])
 
 @router.get("", response_model=dict)

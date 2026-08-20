@@ -1,6 +1,7 @@
 import { cn } from '#lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import Logo from './Logo';
+import { logout } from '../api/client';
 
 const links = [
   { to: '/generator', label: 'Generator' },
@@ -9,7 +10,12 @@ const links = [
   { to: '/home', label: 'Home' },
   { to: '/about', label: 'About' },
   { to: '/profile', label: 'Profile' },
+  { to: '/', label: 'Logout' },
 ];
+
+const handleLogout = () => {
+  logout();
+}
 
 export default function Navbar() {
   const { pathname } = useLocation();
@@ -26,7 +32,7 @@ export default function Navbar() {
 
           return (
             <li key={to}>
-              <Link
+              <Link onClick={label === 'Logout' ? handleLogout : undefined}
                 to={to}
                 className={cn(
                   'block rounded-sm px-3 py-2 text-sm transition-colors',

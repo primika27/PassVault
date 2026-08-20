@@ -17,7 +17,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <VaultContext.Provider value={{ masterKey, setMasterKey, lockVault }}>
+    <VaultContext.Provider value={{masterKey, setMasterKey, lockVault }}>
       {children}
     </VaultContext.Provider>
   );

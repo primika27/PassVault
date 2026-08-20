@@ -6,5 +6,5 @@ export default function Home() {
     healthCheck().then(console.log);
   }, []);
 
-  return <h1>Secure Vault</h1>;
+  return <h1>HomePage</h1>;
 }

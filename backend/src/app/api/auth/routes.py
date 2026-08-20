@@ -25,6 +25,12 @@ def register(payload: UserRegister):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+@router.post("/logout")
+def logout(response: Response, session_id: str | None = Cookie(default=None, alias=SESSION_COOKIE)):
+    if session_id:
+        UserService.logout(session_id=session_id)
+        response.delete_cookie(SESSION_COOKIE)
+    return {"message": "Logged out successfully"}
 
 @router.post("/login")
 def login(payload: UserLogin, response: Response):

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth.routes import router as auth_router   
 from app.api.health import router as health_router
-from app.api.auth.vault import router as vault_router
+from app.api.vault import router as vault_router
 from app.db.db import create_db_and_tables, engine
 import app.db.models
 

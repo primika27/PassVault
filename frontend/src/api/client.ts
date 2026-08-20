@@ -13,6 +13,14 @@ export async function healthCheck() {
   return res.json();
 }
 
+export async function logout() {
+  const res = await fetch(`${API_BASE_URL}/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+  return res.json();
+}
+
 export async function getSalt(email: string) {
   const res = await fetch(`${API_BASE_URL}/salt?email=${email}`, {
     method: "GET",

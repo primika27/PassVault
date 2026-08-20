@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import create_engine, MetaData, select
@@ -123,5 +124,11 @@ class Database:
             return conn.execute(
                 vault_items.select().where(vault_items.c.user_id == user_id)
             ).fetchall()
+
+    def expire_session(self, session_id):
+        with self.engine.begin() as conn:
+            conn.execute(sessions.update().where(sessions.c.session_id == session_id).values(
+                expires_at=datetime.now(timezone.utc)
+            ))
   
 database = Database(engine)

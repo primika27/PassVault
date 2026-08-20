@@ -31,6 +31,8 @@ MFA_CODE_TTL = timedelta(minutes=5)
 MFA_MAX_ATTEMPTS = 5
 SESSION_TTL = timedelta(days=7)
 
+def logout(session_id: str):
+    db.database.expire_session(session_id)
 
 def _as_utc_datetime(value: datetime) -> datetime:
     if value.tzinfo is None:
@@ -70,6 +72,12 @@ def get_vault(user_id: str, session_id: str):
 
     vault_items = db.database.get_vault_items_by_user(user_id)
     return vault_items
+
+def get_session_id_by_user_id(user_id: str) -> str | None:
+    session = db.database.get_session_by_user_id(user_id)
+    if session.expires_at > datetime.now(timezone.utc):
+        return session.session_id
+    return None
 
 def login(email : str, auth_hash: str):
     user = db.database.get_user_by_email(email)

@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "vite-plugin-top-level-await": "^1.6.0"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.3.0"
   }
 }

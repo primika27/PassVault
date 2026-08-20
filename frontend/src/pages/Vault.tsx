@@ -110,7 +110,7 @@ export const Vault = () => {
     <div className="max-w-4xl mx-auto p-6 space-y-6 text-zinc-100">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Passwords</h1>
+          <h1 className="text-2xl font-bold">Password vault</h1>
           <p className="text-xs text-zinc-400 mt-1">
             {vaultEntries.length} saved {vaultEntries.length === 1 ? "account" : "accounts"}
           </p>
