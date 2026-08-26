@@ -14,6 +14,10 @@ export async function healthCheck() {
 }
 
 export async function logout() {
+  
+  localStorage.removeItem("user_email");
+  localStorage.removeItem("auth_salt");
+
   const res = await fetch(`${API_BASE_URL}/logout`, {
     method: "POST",
     credentials: "include",
@@ -127,12 +131,42 @@ export async function createRegistrationPayload(form: { name: string; email: str
   };
 }
 
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+export async function loginUser(loginData: { email: string; auth_hash: string }) {
+  
+  const res = await fetch(`${API_BASE_URL}/login`, {
+    method: "POST",
+    credentials: "include", // Include cookies in the request
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(loginData),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const message= typeof data?.detail === "string" ? data.detail : "Login failed";
+    throw new ApiError(message, res.status);
+  }
+
+  return data as { mfaRequired: boolean; next?: string };
+}
+
 export async function createLoginPayload(form: { email: string; password: string }) {
   
   const { salt } = await getSalt(form.email);
   if (!salt) {
     throw new Error("User not found or missing salt");
   }
+
+  localStorage.setItem("user_email", form.email);
+  localStorage.setItem("user_salt", salt); 
 
   const [authHash, masterKey] = await Promise.all([
     deriveAuthHash(form.password, salt),
@@ -188,24 +222,7 @@ export async function authenticateUser(authData: { verificationCode: string }) {
   return data as { message: string };
 }
 
-export async function loginUser(loginData: { email: string; auth_hash: string }) {
-  
-  const res = await fetch(`${API_BASE_URL}/login`, {
-    method: "POST",
-    credentials: "include", // Include cookies in the request
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(loginData),
-  });
 
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(typeof data?.detail === "string" ? data.detail : "Login failed");
-  }
-
-  return data as { mfaRequired: boolean; next?: string };
-}
 
 export async function fetchVault(): Promise<EncryptedVaultItem[]> {
   const res = await fetch(`${API_BASE_URL}/vault`, {
@@ -236,7 +253,7 @@ export async function fetchVaultItemById(itemId: string): Promise<EncryptedVault
 export async function createVaultItemPayload(entry: VaultEntry, masterKey: Uint8Array) {
   const id=crypto.randomUUID();
   const encryptedData = encryptVaultEntry(entry, masterKey);
-  return { id, encrypted_data: encryptedData };
+  return { VaultItemPayload: { id, encrypted_data: encryptedData } };
 }
 export async function saveVaultItem(VaultItemPayload: { id: string; encrypted_data: string }) {
   const res = await fetch(`${API_BASE_URL}/vault`, {

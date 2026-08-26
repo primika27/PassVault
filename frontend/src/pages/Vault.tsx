@@ -1,7 +1,7 @@
 // src/pages/Vault.tsx
 import { useEffect, useState } from "react";
 import { useVault } from "../context/VaultContext";
-import { fetchVault, saveVaultItem } from "../api/client";
+import { deriveMasterKey, fetchVault, getSalt, saveVaultItem } from "../api/client";
 import {
   encryptVaultEntry,
   decryptVaultEntry,
@@ -10,7 +10,7 @@ import {
 import { Button } from "#components/ui/button";
 
 export const Vault = () => {
-  const { masterKey } = useVault();
+  const { masterKey, setMasterKey } = useVault();
 
   const [vaultEntries, setVaultEntries] = useState<(VaultEntry & { id: string })[]>([]);
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
@@ -23,6 +23,40 @@ export const Vault = () => {
   const [password, setPassword] = useState("");
   const [url, setUrl] = useState("");
   const [notes, setNotes] = useState("");
+
+  const [masterPassword, setMasterPassword] = useState("");
+  const [unlockError, setUnlockError] = useState<string | null>(null);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUnlockError(null);
+    setIsUnlocking(true);
+
+    try {
+      let salt = localStorage.getItem("auth_salt");
+      const email = localStorage.getItem("user_email");
+
+      if (!salt && email) {
+      const data = await getSalt(email);
+      salt = data.salt;
+      if (salt) localStorage.setItem("auth_salt", salt);
+      }
+
+      if (!salt) {
+        throw new Error("Session metadata missing. Please log in again.");
+      }
+
+      const derivedKey = await deriveMasterKey(masterPassword, salt);
+      setMasterKey(derivedKey);
+      setMasterPassword("");
+      
+    } catch (err) {
+      setUnlockError(err instanceof Error ? err.message : "Failed to unlock vault. Incorrect password.");
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   useEffect(() => {
     async function loadVault() {
@@ -96,8 +130,28 @@ export const Vault = () => {
 
   if (!masterKey) {
     return (
-      <div className="p-8 text-center text-zinc-400">
-        Vault is locked. Please sign in to decrypt your data.
+      <div className="max-w-md mx-auto mt-20 p-6 bg-zinc-900 border border-zinc-800 rounded-xl space-y-4 text-center">
+        <h2 className="text-xl font-semibold text-zinc-100">Vault is Locked</h2>
+        <p className="text-sm text-zinc-400">
+          Enter your master password to decrypt your data.
+        </p>
+
+        {unlockError && <p className="text-red-400 text-sm">{unlockError}</p>}
+
+        <form onSubmit={handleUnlock} className="space-y-3">
+          <input
+            type="password"
+            value={masterPassword}
+            onChange={(e) => setMasterPassword(e.target.value)}
+            placeholder="Enter master password"
+            required
+            autoFocus
+            className="w-full bg-zinc-950 border border-zinc-800 rounded p-2.5 text-zinc-100 text-sm outline-none focus:border-zinc-500"
+          />
+          <Button type="submit" disabled={isUnlocking} className="w-full">
+            {isUnlocking ? "Decrypting..." : "Unlock Vault"}
+          </Button>
+        </form>
       </div>
     );
   }

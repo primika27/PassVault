@@ -1,5 +1,5 @@
 // src/utils/cryptoVault.ts
-import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
+import { xchacha20poly1305 } from "@noble/ciphers/chacha.js";
 import { bytesToHex, hexToBytes, managedNonce } from '@noble/ciphers/utils.js';
 
 export type VaultEntry = {

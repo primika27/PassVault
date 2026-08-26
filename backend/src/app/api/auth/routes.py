@@ -4,7 +4,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 from app.schemas.schemas import UserLogin, UserRegister, UserVerify, UserAuthenticate
 from app.services.UserService import register, login, verify_email, mfa
-
+from app.exceptions.EmailNotVerifiedError import EmailNotVerifiedError
 router = APIRouter()
 
 MFA_COOKIE = "mfa_challenge"
@@ -38,6 +38,8 @@ def login(payload: UserLogin, response: Response):
         challenge_id = UserService.login(email=payload.email, auth_hash=payload.auth_hash)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except EmailNotVerifiedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
     response.set_cookie(
         key=MFA_COOKIE, value=challenge_id,

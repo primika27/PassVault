@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import create_engine, MetaData, select
-from .models import metadata_obj, users, secrets, sessions
+from .models import metadata_obj, users, secrets, sessions, vault_items
 
 DB_FILE = Path(__file__).resolve().parents[2] / "users.db"
 DATABASE_URL = f"sqlite:///{DB_FILE.as_posix()}"

@@ -10,16 +10,11 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 import secrets as pysecrets
 from datetime import datetime, timedelta, timezone
-
+from app.exceptions.EmailNotVerifiedError import EmailNotVerifiedError
 from app.db.models import purpose
 from app.services.NotificationService import notify_user_verified
 
 load_dotenv()
-
-
-class EmailNotVerifiedError(Exception):
-    """Raised when a user attempts to log in but their email is not verified."""
-
 
 hasher= PasswordHasher()
 
@@ -52,10 +47,9 @@ def register(user_id: str, name : str, email : str, auth_salt : str, auth_hash :
         # Rollback user creation if email fails
         try:
             db.database.delete_user(new_user.user_id if hasattr(new_user, 'user_id') else new_user)
-        except Exception:
+        except Exception("failed to send verification email and rollback user creation"):
             pass
-        raise
-
+        raise Exception("failed to send verification email and rollback user creation")
     return new_user
 
 def verify_password(auth_hash: str, auth_hash_client: str) -> bool:
@@ -80,11 +74,12 @@ def get_session_id_by_user_id(user_id: str) -> str | None:
     return None
 
 def login(email : str, auth_hash: str):
+    
     user = db.database.get_user_by_email(email)
 
     if user is None or not verify_password(user.pass_hash, auth_hash):
         raise ValueError("Invalid credentials")
-
+    
     verified = db.database.get_user_verification_status(user.user_id)
     if str(verified).lower() not in ("true", "1", "verified") and verified is not True:
         raise EmailNotVerifiedError("Email not verified")

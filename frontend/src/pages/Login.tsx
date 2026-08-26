@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { createLoginPayload, healthCheck, loginUser } from "../api/client";
+import { ApiError, createLoginPayload, healthCheck, loginUser } from "../api/client";
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldLegend,
@@ -15,7 +16,10 @@ import { useVault } from "../context/VaultContext";
 export default function Login() {
   const navigate = useNavigate();
   const { setMasterKey } = useVault();
-  
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [isUnverified, setIsUnverified] = useState(false);
+
   useEffect(() => {
     healthCheck().then(console.log);
   }, []);
@@ -30,24 +34,44 @@ export default function Login() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
   const handleLogin = async () => {
-    const { loginData, masterKey } = await createLoginPayload({
-      email: form.name,
-      password: form.password,
-    });
-        try {
-          const response = await loginUser({
-            email: loginData.email,
-            auth_hash: loginData.auth_hash,
-          });
-          setMasterKey(masterKey);
-          if (response.mfaRequired) {
-            navigate(response.next ?? "/mfa");
-            return;
-          }
-          console.log("User logged in successfully:", response);
-        } catch (error) {
-          console.error("Login failed:", error);
+
+    setErrorMessage(null);
+    setIsUnverified(false);
+    setLoading(true);
+
+    try {
+      const { loginData, masterKey } = await createLoginPayload({
+        email: form.name,
+        password: form.password,
+      });
+
+      const response = await loginUser({
+        email: loginData.email,
+        auth_hash: loginData.auth_hash,
+      });
+
+      setMasterKey(masterKey);
+
+        if (response.mfaRequired) {
+          navigate(response.next ?? "/mfa");
+          return;
         }
+        console.log("User logged in successfully:", response);
+
+        } catch (err) {
+          if (err instanceof ApiError) {
+            setErrorMessage(err.message);
+            if (err.status === 403) {
+              setIsUnverified(true);
+            }
+          } else if (err instanceof Error) {
+            setErrorMessage(err.message);
+          } else {
+            setErrorMessage("An unexpected error occurred.");
+        }
+      } finally {
+        setLoading(false);
+      }
   };
   
   return (
@@ -55,6 +79,13 @@ export default function Login() {
  <FieldSet>
   <FieldLegend>Login</FieldLegend>
   <FieldGroup>
+    {isUnverified ? (
+      <FieldError>
+        Your email is not verified. Please check your inbox for a verification email.
+      </FieldError>
+    ) : errorMessage && (
+      <FieldError >{errorMessage}</FieldError>
+    )}
     <Field>
       <FieldLabel htmlFor="name">email</FieldLabel>
       <Input id="name" name="name" autoComplete="off" placeholder="enter email" value={form.name}
@@ -65,7 +96,9 @@ export default function Login() {
       <Input id="password" name="password" autoComplete="off" placeholder="enter password" type="password" value={form.password}
               onChange={handleChange} />
     </Field>
-    <Button onClick={handleLogin}>Login</Button>
+    <Button onClick={handleLogin} disabled={loading}>
+      {loading ? "Logging in..." : "Login"}
+    </Button>
     <Link className="text-sm text-muted-foreground hover:underline" to="/register">
       Don't have an account? Register
     </Link>
