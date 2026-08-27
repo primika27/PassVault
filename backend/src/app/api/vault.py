@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from app.services import UserService
 from app.api.auth.routes import SESSION_COOKIE
-from app.schemas.schemas import VaultItemCreate, VaultItemResponse
+from app.schemas.schemas import VaultItemCreate, VaultItemResponse, VaultItemResponseWrapper
 
 router = APIRouter(prefix="/vault", tags=["vault"])
 
@@ -30,15 +30,14 @@ def get_single_vault_item(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session cookie missing or expired."
         )
-    
-    # Ensures item belongs to the user matching this session_id
+
     vault_item = UserService.get_vault_item_by_id(session_id=session_id, item_id=item_id)
     if not vault_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vault item not found")
         
     return {"vault_item": vault_item}
 
-@router.post("", response_model=VaultItemResponse)
+@router.post("", response_model=VaultItemResponseWrapper)
 def create_vault_item(
     item_data: VaultItemCreate,
     session_id: str | None = Cookie(default=None, alias=SESSION_COOKIE)
@@ -51,3 +50,15 @@ def create_vault_item(
 
     new_item = UserService.create_vault_item(session_id=session_id, item_data=item_data)
     return {"vault_item": new_item}
+
+@router.get("/key-check") 
+def get_key_check(session_id: str | None = Cookie(default=None, alias=SESSION_COOKIE)):
+    if not session_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or not found."
+        )
+    try:
+        return UserService.get_key_check(session_id=session_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

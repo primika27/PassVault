@@ -119,14 +119,23 @@ export async function createRegistrationPayload(form: { name: string; email: str
 
   //generate salt and hash the password
   const authSalt = generateSalt();
-  const authHash = await deriveAuthHash(form.password, authSalt);
+  const [authHash, masterKey] = await Promise.all([
+    deriveAuthHash(form.password, authSalt),
+    deriveMasterKey(form.password, authSalt),
+  ]);
   
+  const keyCheckBlob = encryptVaultEntry(
+      { title: "KEY_VERIFY", username: "", password: "VALID_KEY", url: "", notes: ""},
+      masterKey
+    );
+
   return {
     user_id: crypto.randomUUID(),
     name: form.name,
     email: form.email,
     auth_salt: authSalt,
     auth_hash: authHash,
+    key_check: keyCheckBlob,
   };
 }
 
@@ -179,6 +188,19 @@ return {
     },
     masterKey, 
   };
+}
+
+export async function getKeyCheckBlob() {
+  const res = await fetch(`${API_BASE_URL}/key-check`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.detail || "Failed to fetch key check blob");
+  }
+  return data.key_check as string;
 }
 
 export async function deriveMasterKey(password: string, salt: string): Promise<Uint8Array> {
@@ -267,5 +289,5 @@ export async function saveVaultItem(payload: {encrypted_data: string }) {
   if (!res.ok) {
     throw new Error(data?.detail || "Failed to save vault item");
   }
-  return data as { id: string; message: string };
+  return data.vault_item as { id: string; encrypted_data: string };
 }

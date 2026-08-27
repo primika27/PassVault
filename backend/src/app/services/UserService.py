@@ -1,9 +1,6 @@
 import datetime
 import os
 import uuid
-
-from django.conf.locale import tr
-from requests import session
 import app.db.db as db
 import smtplib
 from email.message import EmailMessage
@@ -38,10 +35,10 @@ def _as_utc_datetime(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 #creating account
-def register(user_id: str, name : str, email : str, auth_salt : str, auth_hash : str):
+def register(user_id: str, name : str, email : str, auth_salt : str, auth_hash : str, key_check: str):
 
     pass_hash = hasher.hash(auth_hash)
-    new_user = db.database.add_user(user_id, name, email, auth_salt, pass_hash, False)
+    new_user = db.database.add_user(user_id, name, email, auth_salt, pass_hash, False, key_check, datetime.now(timezone.utc))
     try:
         # send verification email and leave account unverified until user clicks link
         verify_email(email)
@@ -69,6 +66,7 @@ def get_vault(user_id: str, session_id: str):
 
     vault_items = db.database.get_vault_items_by_user(user_id)
     return vault_items
+
 
 def get_session_id_by_user_id(user_id: str) -> str | None:
     session = db.database.get_session_by_user_id(user_id)
@@ -223,7 +221,16 @@ def get_vault_item(user_id: str, session_id: str, item_id: str):
             return item
     raise ValueError("Vault item not found")
 
+def get_vault_item_by_id(session_id: str, item_id: str):
+    user_id = db.database.get_user_id_by_session(session_id)
+    if not user_id:
+        raise ValueError("Invalid or expired session. Please log in again.")
 
+    vault_items = db.database.vault_items_by_user(user_id)
+    for item in vault_items:
+        if item.id == item_id:
+            return item
+    raise ValueError("Vault item not found")
 
 def create_vault_item(session_id: str, item_data: VaultItemCreate):
 
@@ -246,7 +253,18 @@ def create_vault_item(session_id: str, item_data: VaultItemCreate):
         id=item_id,
         user_id=user_id,
         encrypted_data=item_data.encrypted_data,
-        created_at=now.isoformat(),
-        updated_at=now.isoformat()
+        created_at=now,
+        updated_at=now
     )
-    return {"id": item_id, "user_id": user_id, "encrypted_data": item_data.encrypted_data}
+    return {"id": item_id, "user_id": user_id, "encrypted_data": item_data.encrypted_data, "created_at": now.isoformat(), "updated_at": now.isoformat()}
+
+def get_key_check(session_id: str):
+    user_id = db.database.get_user_id_by_session(session_id)
+    if not user_id:
+        raise ValueError("Invalid or expired session. Please log in again.")
+
+    user = db.database.get_user_by_id(user_id)
+    if not user:
+        raise ValueError("User not found.")
+
+    return {"key_check": user.key_check}

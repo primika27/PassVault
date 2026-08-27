@@ -5,6 +5,7 @@ import {
   createVaultItemPayload,
   deriveMasterKey,
   fetchVault,
+  getKeyCheckBlob,
   getSalt,
   saveVaultItem,
 } from "../api/client";
@@ -52,11 +53,32 @@ export const Vault = () => {
         throw new Error("Session metadata missing. Please log in again.");
       }
 
+      // 1. Derive candidate key from the entered password
       const derivedKey = await deriveMasterKey(masterPassword, salt);
+
+      // 2. Fetch the verification ciphertext from the backend
+      const checkBlob = await getKeyCheckBlob();
+      if (!checkBlob) {
+        throw new Error("Key verification token not found. Please log in again.");
+      }
+
+      // 3. Authenticate the key using Poly1305 MAC decryption
+      try {
+        const checkEntry = decryptVaultEntry(checkBlob, derivedKey);
+        if (checkEntry.password !== "VALID_KEY") {
+          throw new Error("Incorrect master password.");
+        }
+      } catch {
+        throw new Error("Incorrect master password.");
+      }
+
+      // 4. Unlock only when key verification succeeds
       setMasterKey(derivedKey);
       setMasterPassword("");
     } catch (err) {
-      setUnlockError(err instanceof Error ? err.message : "Failed to unlock vault. Incorrect password.");
+      setUnlockError(
+        err instanceof Error ? err.message : "Failed to unlock vault. Incorrect password."
+      );
     } finally {
       setIsUnlocking(false);
     }
@@ -98,7 +120,8 @@ export const Vault = () => {
     });
   };
 
-  const isAllRevealed = vaultEntries.length > 0 && revealedIds.size === vaultEntries.length;
+  const isAllRevealed =
+    vaultEntries.length > 0 && revealedIds.size === vaultEntries.length;
 
   const toggleRevealAll = () => {
     if (isAllRevealed) {
@@ -114,7 +137,7 @@ export const Vault = () => {
 
     try {
       const entryData = { title, username, password, url, notes };
-      const payload = createVaultItemPayload(entryData,masterKey);
+      const payload = createVaultItemPayload(entryData, masterKey);
       const savedItem = await saveVaultItem(payload);
 
       setVaultEntries((prev) => [...prev, { ...entryData, id: savedItem.id }]);
@@ -151,7 +174,7 @@ export const Vault = () => {
             className="w-full bg-zinc-950 border border-zinc-800 rounded p-2.5 text-zinc-100 text-sm outline-none focus:border-zinc-500"
           />
           <Button type="submit" disabled={isUnlocking} className="w-full">
-            {isUnlocking ? "Decrypting..." : "Unlock Vault"}
+            {isUnlocking ? "Verifying & Decrypting..." : "Unlock Vault"}
           </Button>
         </form>
       </div>

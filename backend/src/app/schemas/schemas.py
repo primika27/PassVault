@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from pydantic import BaseModel, EmailStr, field_validator
 
 
@@ -7,6 +9,7 @@ class UserRegister(BaseModel):
     name: str
     auth_salt: str
     auth_hash: str
+    key_check: str
 
     @field_validator("auth_hash")
     @classmethod
@@ -34,5 +37,8 @@ class VaultItemResponse(BaseModel):
     id: str
     user_id: str
     encrypted_data: str
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None
+    updated_at: datetime | None
+
+class VaultItemResponseWrapper(BaseModel):
+    vault_item: VaultItemResponse
