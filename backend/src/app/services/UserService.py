@@ -1,7 +1,9 @@
 import datetime
 import os
+import uuid
 
 from django.conf.locale import tr
+from requests import session
 import app.db.db as db
 import smtplib
 from email.message import EmailMessage
@@ -13,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from app.exceptions.EmailNotVerifiedError import EmailNotVerifiedError
 from app.db.models import purpose
 from app.services.NotificationService import notify_user_verified
+from app.schemas.schemas import VaultItemCreate
 
 load_dotenv()
 
@@ -222,15 +225,28 @@ def get_vault_item(user_id: str, session_id: str, item_id: str):
 
 
 
-def create_vault_item(id: str, user_id: str, session_id: str, item_data: dict):
+def create_vault_item(session_id: str, item_data: VaultItemCreate):
+
     session = db.database.get_session_by_id(session_id)
-    if not session or session.user_id != user_id:
-        raise ValueError("Invalid or expired session. Please log in again.")    
+    expires_at = db.database.get_session_expiration(session_id).replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+
+    if not session or expires_at < now:
+        raise ValueError("Invalid or expired session. Please log in again.")  
+
+    user_id = db.database.get_user_id_by_session(session_id)
+    if not user_id:
+        raise ValueError("could not get user ID from session.")
+
+    item_id = item_data.id or str(uuid.uuid4())
+
+    now = datetime.now(timezone.utc)
+
     db.database.add_vault_item(
-        id=id,
+        id=item_id,
         user_id=user_id,
-        encrypted_data=item_data["encrypted_data"],
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        encrypted_data=item_data.encrypted_data,
+        created_at=now.isoformat(),
+        updated_at=now.isoformat()
     )
-    return {"id": item_id, "encrypted_data": item_data["encrypted_data"]}
+    return {"id": item_id, "user_id": user_id, "encrypted_data": item_data.encrypted_data}

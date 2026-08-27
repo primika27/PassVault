@@ -3,7 +3,6 @@ import { encryptVaultEntry, type VaultEntry } from '../utils/passwordVault';
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 export interface EncryptedVaultItem {
   id: string;
-  user_id: string;
   encrypted_data: string;
   created_at: string;
   updated_at: string;
@@ -14,7 +13,7 @@ export async function healthCheck() {
 }
 
 export async function logout() {
-  
+
   localStorage.removeItem("user_email");
   localStorage.removeItem("auth_salt");
 
@@ -166,7 +165,7 @@ export async function createLoginPayload(form: { email: string; password: string
   }
 
   localStorage.setItem("user_email", form.email);
-  localStorage.setItem("user_salt", salt); 
+  localStorage.setItem("auth_salt", salt); 
 
   const [authHash, masterKey] = await Promise.all([
     deriveAuthHash(form.password, salt),
@@ -250,19 +249,18 @@ export async function fetchVaultItemById(itemId: string): Promise<EncryptedVault
   return data.vault_item;
 }
 
-export async function createVaultItemPayload(entry: VaultEntry, masterKey: Uint8Array) {
-  const id=crypto.randomUUID();
+export function createVaultItemPayload(entry: VaultEntry, masterKey: Uint8Array) {
   const encryptedData = encryptVaultEntry(entry, masterKey);
-  return { VaultItemPayload: { id, encrypted_data: encryptedData } };
+  return { encrypted_data: encryptedData };
 }
-export async function saveVaultItem(VaultItemPayload: { id: string; encrypted_data: string }) {
+export async function saveVaultItem(payload: {encrypted_data: string }) {
   const res = await fetch(`${API_BASE_URL}/vault`, {
     method: "POST",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(VaultItemPayload),
+    body: JSON.stringify(payload),
   });
 
   const data = await res.json();

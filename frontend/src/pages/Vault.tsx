@@ -1,18 +1,23 @@
 // src/pages/Vault.tsx
 import { useEffect, useState } from "react";
 import { useVault } from "../context/VaultContext";
-import { deriveMasterKey, fetchVault, getSalt, saveVaultItem } from "../api/client";
 import {
-  encryptVaultEntry,
-  decryptVaultEntry,
-  type VaultEntry,
-} from "../utils/passwordVault";
+  createVaultItemPayload,
+  deriveMasterKey,
+  fetchVault,
+  getSalt,
+  saveVaultItem,
+} from "../api/client";
+import { decryptVaultEntry, type VaultEntry } from "../utils/passwordVault";
 import { Button } from "#components/ui/button";
+
+// Combines the decrypted fields with the database record ID
+export type DecryptedVaultItem = VaultEntry & { id: string };
 
 export const Vault = () => {
   const { masterKey, setMasterKey } = useVault();
 
-  const [vaultEntries, setVaultEntries] = useState<(VaultEntry & { id: string })[]>([]);
+  const [vaultEntries, setVaultEntries] = useState<DecryptedVaultItem[]>([]);
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +43,9 @@ export const Vault = () => {
       const email = localStorage.getItem("user_email");
 
       if (!salt && email) {
-      const data = await getSalt(email);
-      salt = data.salt;
-      if (salt) localStorage.setItem("auth_salt", salt);
+        const data = await getSalt(email);
+        salt = data.salt;
+        if (salt) localStorage.setItem("auth_salt", salt);
       }
 
       if (!salt) {
@@ -50,7 +55,6 @@ export const Vault = () => {
       const derivedKey = await deriveMasterKey(masterPassword, salt);
       setMasterKey(derivedKey);
       setMasterPassword("");
-      
     } catch (err) {
       setUnlockError(err instanceof Error ? err.message : "Failed to unlock vault. Incorrect password.");
     } finally {
@@ -67,7 +71,7 @@ export const Vault = () => {
         setError(null);
 
         const encryptedItems = await fetchVault();
-        const decryptedList = encryptedItems.map((item) => {
+        const decryptedList: DecryptedVaultItem[] = encryptedItems.map((item) => {
           const entry = decryptVaultEntry(item.encrypted_data, masterKey);
           return { ...entry, id: item.id };
         });
@@ -81,7 +85,6 @@ export const Vault = () => {
     }
     loadVault();
   }, [masterKey]);
-
 
   const toggleReveal = (id: string) => {
     setRevealedIds((prev) => {
@@ -109,14 +112,13 @@ export const Vault = () => {
     e.preventDefault();
     if (!masterKey) return;
 
-    const id = crypto.randomUUID();
-    const newEntry: VaultEntry = { id, title, username, password, url, notes };
-
     try {
-      const encryptedHex = encryptVaultEntry(newEntry, masterKey);
-      await saveVaultItem({ id, encrypted_data: encryptedHex });
+      const entryData = { title, username, password, url, notes };
+      const payload = createVaultItemPayload(entryData,masterKey);
+      const savedItem = await saveVaultItem(payload);
 
-      setVaultEntries((prev) => [...prev, { ...newEntry, id }]);
+      setVaultEntries((prev) => [...prev, { ...entryData, id: savedItem.id }]);
+
       setShowAddForm(false);
       setTitle("");
       setUsername("");
@@ -246,7 +248,6 @@ export const Vault = () => {
                 key={entry.id}
                 className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
-                {/* Left Side: Metadata */}
                 <div className="space-y-1">
                   <h3 className="font-semibold text-base text-zinc-100">{entry.title}</h3>
                   <p className="text-xs text-zinc-400 font-mono">

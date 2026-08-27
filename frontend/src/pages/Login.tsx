@@ -19,6 +19,7 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isUnverified, setIsUnverified] = useState(false);
+  const [isNotFound, setIsNotFound] = useState(false);
 
   useEffect(() => {
     healthCheck().then(console.log);
@@ -64,6 +65,9 @@ export default function Login() {
             if (err.status === 403) {
               setIsUnverified(true);
             }
+            if (err.status === 404) {
+              setIsNotFound(true);
+            }
           } else if (err instanceof Error) {
             setErrorMessage(err.message);
           } else {
@@ -86,6 +90,11 @@ export default function Login() {
     ) : errorMessage && (
       <FieldError >{errorMessage}</FieldError>
     )}
+    {isNotFound && (
+      <FieldError>
+        User not found. Please check your email or register for a new account.
+      </FieldError>
+    )}
     <Field>
       <FieldLabel htmlFor="name">email</FieldLabel>
       <Input id="name" name="name" autoComplete="off" placeholder="enter email" value={form.name}
@@ -94,7 +103,7 @@ export default function Login() {
     <Field>
       <FieldLabel htmlFor="password">password</FieldLabel>
       <Input id="password" name="password" autoComplete="off" placeholder="enter password" type="password" value={form.password}
-              onChange={handleChange} />
+              onChange={handleChange} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
     </Field>
     <Button onClick={handleLogin} disabled={loading}>
       {loading ? "Logging in..." : "Login"}

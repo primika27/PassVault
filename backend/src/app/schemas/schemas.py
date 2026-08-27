@@ -1,6 +1,3 @@
-import array
-
-import argon2
 from pydantic import BaseModel, EmailStr, field_validator
 
 
@@ -29,9 +26,13 @@ class UserAuthenticate(BaseModel):
 class UserVerify(BaseModel):
     token: str
 
-class VaultItem(BaseModel):
+class VaultItemCreate(BaseModel):
     id: str | None = None
-    user_id: str | None = None
+    encrypted_data: str
+
+class VaultItemResponse(BaseModel):
+    id: str
+    user_id: str
     encrypted_data: str
     created_at: str | None = None
     updated_at: str | None = None

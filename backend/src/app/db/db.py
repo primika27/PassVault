@@ -37,6 +37,7 @@ class Database:
                 verification_status=verification_status,
             ))
             return result.inserted_primary_key[0]  # returns the new user_id
+        
 
     def delete_user(self, user_id):
         with self.engine.begin() as conn:
@@ -137,10 +138,33 @@ class Database:
             ).first()
             return result.user_id if result else None
         
+    def get_session_by_user_id(self, user_id):
+        with self.engine.connect() as conn:
+            return conn.execute(
+                sessions.select().where(sessions.c.user_id == user_id)
+            ).first()
+        
     def get_session_by_id(self, session_id):
         with self.engine.connect() as conn:
             return conn.execute(
                 sessions.select().where(sessions.c.session_id == session_id)
             ).first()
+
+    def get_session_expiration(self, session_id):
+        with self.engine.connect() as conn:
+            result = conn.execute(
+                sessions.select().where(sessions.c.session_id == session_id)
+            ).first()
+            return result.expires_at if result else None
+
+    def add_vault_item(self, id, user_id, encrypted_data, created_at, updated_at):
+        with self.engine.begin() as conn:
+            conn.execute(vault_items.insert().values(
+                id=id,
+                user_id=user_id,
+                encrypted_data=encrypted_data,
+                created_at=created_at,
+                updated_at=updated_at
+            ))
   
 database = Database(engine)
