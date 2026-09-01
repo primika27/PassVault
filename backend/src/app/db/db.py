@@ -26,15 +26,17 @@ class Database:
     def __init__(self, engine):
         self.engine = engine
 
-    def add_user(self, user, name, email, auth_salt, pass_hash, verification_status):
+    def add_user(self, user, name, email, auth_salt, pass_hash, verification_status, key_check, created_at):
         with self.engine.begin() as conn:
             result = conn.execute(users.insert().values(
                 user_id=user,
-                username=name,
+                name=name,
                 email=email,
                 auth_salt=auth_salt,
                 pass_hash=pass_hash,
                 verification_status=verification_status,
+                key_check=key_check,
+                created_at=created_at
             ))
             return result.inserted_primary_key[0]  # returns the new user_id
         

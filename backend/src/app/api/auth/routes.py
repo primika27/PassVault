@@ -20,6 +20,7 @@ def register(payload: UserRegister):
             email=payload.email,
             auth_salt=payload.auth_salt,
             auth_hash=payload.auth_hash,
+            key_check=payload.key_check
         )
         
     except ValueError as exc:

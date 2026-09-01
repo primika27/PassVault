@@ -57,7 +57,8 @@ export async function registerUser(userData: {
   name: string; 
   email: string; 
   auth_salt: string;
-  auth_hash: string; 
+  auth_hash: string;
+  key_check: string; 
 }) {
   const res = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",

@@ -5,8 +5,8 @@ from pydantic import BaseModel, EmailStr, field_validator
 
 class UserRegister(BaseModel):
     user_id: str | None = None
-    email: EmailStr
     name: str
+    email: EmailStr
     auth_salt: str
     auth_hash: str
     key_check: str
