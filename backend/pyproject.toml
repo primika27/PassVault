@@ -1,5 +1,6 @@
-[tool.vercel]
-entrypoint = "server:app"
-
-[tool.vercel.scripts]
-build = "python build.py"
+dependencies = [
+    "fastapi>=0.139,<1",
+    "uvicorn>=0.30,<1",
+    "SQLAlchemy>=2,<3",
+    "psycopg2-binary>=2.9.9",
+]

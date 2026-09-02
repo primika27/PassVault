@@ -1,25 +1,34 @@
 from datetime import datetime, timezone
+import os
 from pathlib import Path
-
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, MetaData, select
 from .models import metadata_obj, users, secrets, sessions, vault_items
 
-DB_FILE = Path(__file__).resolve().parents[2] / "users.db"
-DATABASE_URL = f"sqlite:///{DB_FILE.as_posix()}"
+load_dotenv()
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+DB_FILE = Path(__file__).resolve().parents[2] / "users.db"
+
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_FILE}")
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True,
+    pool_recycle=300)
 
 def create_db_and_tables():
-    with engine.connect() as conn:
-        legacy_user_id = conn.exec_driver_sql(
-            """
-            SELECT 1
-            FROM pragma_table_info('users')
-            WHERE name = 'user_id' AND upper(type) = 'INTEGER'
-            """
-        ).first()
-        if legacy_user_id:
-            metadata_obj.drop_all(bind=engine)
+    if engine.dialect.name == "sqlite":
+        with engine.connect() as conn:
+            legacy_user_id = conn.exec_driver_sql(
+                """
+                SELECT 1
+                FROM pragma_table_info('users')
+                WHERE name = 'user_id' AND upper(type) = 'INTEGER'
+                """
+            ).first()
+            if legacy_user_id:
+                metadata_obj.drop_all(bind=engine)
+
     metadata_obj.create_all(bind=engine)
 
 class Database:

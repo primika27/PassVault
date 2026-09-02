@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.auth.routes import router as auth_router   
 from app.api.health import router as health_router
 from app.api.vault import router as vault_router
-from app.db.db import create_db_and_tables, engine
-import app.db.models
+from app.db.db import create_db_and_tables
+
 
 
 @asynccontextmanager
@@ -28,7 +28,7 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    #allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
