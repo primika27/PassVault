@@ -34,28 +34,6 @@ There are two distinct classes of "password" in this app, handled differently on
 2. **Passwords stored inside the vault** (e.g., service credentials) — reversible, since the
    user needs to decrypt and view them. Encrypted client-side before ever reaching the network.
 
-### Key Derivation Flow
-
-Master Password + Salt (GET /auth/salt)
-│
-▼
-[Argon2id KDF]
-│
-▼ (Stretched Output)
-[Domain Separation]
-┌───────┴───────┐
-▼               ▼
-[Auth Hash]    [Encryption Key]
-│               │
-│               └─► Stored in browser memory (React context) only.
-│                   Never written to localStorage/sessionStorage.
-│                   Wiped on logout or page refresh.
-│                   Used locally for AES-256-GCM operations.
-│
-└─────────────────► Sent via HTTPS POST to FastAPI.
-Hashed server-side with Argon2 and verified
-against the database record.
-
 1. On login, the client fetches the user's stored `kdf_salt` (`GET /auth/salt`).
 2. The browser runs Argon2id over `(master password + salt)`.
 3. The stretched output is split via domain-separated derivation (HKDF-style) into two
@@ -117,20 +95,5 @@ zero-knowledge metadata masking.
 
 ---
 
-## Project Structure
 
-PassVault/
-├── backend/
-│   ├── src/
-│   │   └── app/
-│   │       ├── api/         # FastAPI route controllers
-│   │       ├── core/        # Security, tokens, configuration
-│   │       ├── db/          # SQLAlchemy engine & models
-│   │       └── main.py      # App entry point & lifespan events
-│   ├── migrate_data.py      # SQLite to Neon PostgreSQL migration script
-│   └── requirements.txt
-└── frontend/
-├── src/                 # React components, contexts, crypto modules
-├── package.json
-└── vite.config.ts
 
