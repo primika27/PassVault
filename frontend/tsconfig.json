@@ -6,6 +6,8 @@
   ],
   "compilerOptions": {
     "moduleResolution": "bundler",
-    "resolvePackageJsonImports": true
+    "resolvePackageJsonImports": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   }
 }
