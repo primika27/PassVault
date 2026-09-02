@@ -34,6 +34,8 @@ There are two distinct classes of "password" in this app, handled differently on
 2. **Passwords stored inside the vault** (e.g., service credentials) — reversible, since the
    user needs to decrypt and view them. Encrypted client-side before ever reaching the network.
 
+# Key deration flow:
+
 1. On login, the client fetches the user's stored `kdf_salt` (`GET /auth/salt`).
 2. The browser runs Argon2id over `(master password + salt)`.
 3. The stretched output is split via domain-separated derivation (HKDF-style) into two
